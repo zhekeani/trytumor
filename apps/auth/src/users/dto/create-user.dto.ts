@@ -1,5 +1,6 @@
 import {
   IsEmail,
+  IsOptional,
   IsPhoneNumber,
   IsString,
   IsStrongPassword,
@@ -18,11 +19,14 @@ export class CreateUserDto {
   username: string;
 
   @IsString()
-  department?: string;
+  @IsOptional()
+  department: string;
 
   @IsString()
-  specialization?: string;
+  @IsOptional()
+  specialization: string;
 
   @IsPhoneNumber()
-  phoneNumber?: string;
+  @IsOptional()
+  phoneNumber: string;
 }

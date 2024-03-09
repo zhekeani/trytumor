@@ -1,0 +1,16 @@
+services:
+  auth:
+    build:
+      context: .
+      dockerfile: ./apps/auth/Dockerfile
+    # Mount the root directory
+    volumes:
+      - .:/usr/src/app
+    # Overide the CMD to start dev server
+    command: npm run start:dev auth
+    env_file:
+      - ./apps/auth/.env
+    ports:
+      - '3001:3001'
+  mongo:
+    image: mongo

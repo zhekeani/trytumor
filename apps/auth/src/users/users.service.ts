@@ -1,6 +1,5 @@
 import {
   Injectable,
-  Post,
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
@@ -29,20 +28,26 @@ export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
   private async validateCreateUserDto(createUserDto: CreateUserDto) {
-    let user: UserDocument;
-    let exceptionMessage: string;
+    let exceptionMessage: string[] = [];
+    let userWithSameEmail: UserDocument;
+    let userWithSamePassword: UserDocument;
 
     try {
-      user = await this.usersRepository.findOne({ email: createUserDto.email });
+      userWithSameEmail = await this.usersRepository.findOne({
+        email: createUserDto.email,
+      });
+    } catch (error) {}
 
-      exceptionMessage = user ? 'Email already exist.' : undefined;
-
-      user = await this.usersRepository.findOne({
+    try {
+      userWithSamePassword = await this.usersRepository.findOne({
         username: createUserDto.username,
       });
+    } catch (error) {}
 
-      exceptionMessage = user ? 'Username already exist.' : undefined;
-    } catch (error) {
+    if (userWithSameEmail) exceptionMessage.push('Email already exist.');
+    if (userWithSamePassword) exceptionMessage.push('Username already exist.');
+
+    if (exceptionMessage.length == 0) {
       return;
     }
 
