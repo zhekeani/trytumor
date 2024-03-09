@@ -3,30 +3,19 @@ import {
   UnauthorizedException,
   UnprocessableEntityException,
 } from '@nestjs/common';
-import { FilterQuery } from 'mongoose';
 import * as bcrypt from 'bcryptjs';
+import { FilterQuery } from 'mongoose';
 
-import { UsersRepository } from './users.repository';
 import { CreateUserDto } from './dto/create-user.dto';
-import { UserDocument } from './models/user.schema';
 import { GetUserDto } from './dto/get-user.dto';
-
-type VerifyUserOptions =
-  | {
-      email: string;
-      username?: never;
-      password: string;
-    }
-  | {
-      email?: never;
-      username: string;
-      password: string;
-    };
+import { UserDocument } from './models/user.schema';
+import { UsersRepository } from './users.repository';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
+  // Validate whether email or username is already used
   private async validateCreateUserDto(createUserDto: CreateUserDto) {
     let exceptionMessage: string[] = [];
     let userWithSameEmail: UserDocument;
@@ -63,9 +52,11 @@ export class UsersService {
     });
   }
 
-  // Used for sign in user
-  async verifyUser(options: VerifyUserOptions) {
-    const { email, username, password } = options;
+  // Used in local strategy AuthGuard
+  async verifyUser(usernameAndEmail: string, password: string) {
+    const { email, username } = JSON.parse(usernameAndEmail);
+
+    console.log('This is from UsersService', email, username);
 
     const query: FilterQuery<UserDocument> = {
       $or: [{ email }, { username }],
