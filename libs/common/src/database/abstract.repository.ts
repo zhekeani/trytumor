@@ -4,7 +4,7 @@ import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
 
 // Class that extends this abstract class need to provide
 // generic document type that satisfy AbstractDocument
-export abstract class AbstractReposiotry<TDocument extends AbstractDocument> {
+export abstract class AbstractRepository<TDocument extends AbstractDocument> {
   protected abstract readonly logger: Logger;
 
   // Requiring Mongoose model as constructor argument
