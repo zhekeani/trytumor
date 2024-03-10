@@ -13,7 +13,7 @@ export class AuthService {
   ) {}
 
   // Method to create jwt token and send it back as cookie
-  async login(user: UserDocument, response: Response) {
+  async setJwtToken(user: UserDocument, response: Response) {
     // Set the token payload to user._id
     const tokenPayload: TokenPayload = {
       userId: user._id.toHexString(),
