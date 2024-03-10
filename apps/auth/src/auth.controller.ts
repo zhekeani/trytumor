@@ -6,12 +6,14 @@ import { CurrentUser } from './decorators/current-user.decorator';
 import { LocalAuthGuard } from './guards/local-auth.guard';
 import { UserDto } from './users/dto/user.dto';
 import { UserDocument } from './users/models/user.schema';
+import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { Serialize } from './interceptors/serialize.interceptor';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  // Login functionality mainly handled by the AuthGuard & LocalStrategy
+  // Login functionality mainly handled by LocalStrategy & UsersService
   @UseGuards(LocalAuthGuard)
   // @Serialize(UserDto)
   @Post('login')
@@ -27,5 +29,13 @@ export class AuthController {
       // Only expose specified user's properties
       plainToClass(UserDto, user, { excludeExtraneousValues: true }),
     );
+  }
+
+  // Authenticate functionality mainly handled by JwtStrategy & UsersService
+  @UseGuards(JwtAuthGuard)
+  @Serialize(UserDto)
+  @Post('authenticate')
+  async authenticate(@CurrentUser() user: UserDocument) {
+    return user;
   }
 }

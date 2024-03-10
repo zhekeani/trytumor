@@ -72,7 +72,7 @@ export class UsersService {
     return user;
   }
 
-  // Used in auth guard
+  // Used in jwt local strategy
   async getUser(getUserDto: GetUserDto) {
     return this.usersRepository.findOne(getUserDto);
   }

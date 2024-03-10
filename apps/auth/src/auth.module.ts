@@ -8,6 +8,7 @@ import { UsersModule } from './users/users.module';
 import { JwtModule } from '@nestjs/jwt';
 import { LocalStrategy } from './strategies/local.strategy';
 import { UsernameEmailStringify } from './middlewares/username-email-stringify.middleware';
+import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -36,7 +37,7 @@ import { UsernameEmailStringify } from './middlewares/username-email-stringify.m
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy],
 })
 export class AuthModule {
   configure(consumer: MiddlewareConsumer) {
