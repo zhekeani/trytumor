@@ -22,6 +22,9 @@ export class UserDocument extends AbstractDocument {
 
   @Prop()
   phoneNumber?: string;
+
+  @Prop()
+  refreshToken?: string;
 }
 
 // UserSchema used by Mongoose to create Model

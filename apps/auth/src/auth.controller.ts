@@ -23,7 +23,7 @@ export class AuthController {
     // back the Response
     @Res({ passthrough: true }) response: Response,
   ) {
-    await this.authService.setJwtToken(user, response);
+    await this.authService.login(user, response);
 
     response.send(
       // Only expose specified user's properties

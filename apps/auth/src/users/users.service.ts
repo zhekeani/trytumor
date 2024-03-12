@@ -4,7 +4,7 @@ import {
   UnprocessableEntityException,
 } from '@nestjs/common';
 import * as bcrypt from 'bcryptjs';
-import { FilterQuery } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 
 import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserDto } from './dto/get-user.dto';
@@ -56,8 +56,6 @@ export class UsersService {
   async verifyUser(usernameAndEmail: string, password: string) {
     const { email, username } = JSON.parse(usernameAndEmail);
 
-    console.log('This is from UsersService', email, username);
-
     const query: FilterQuery<UserDocument> = {
       $or: [{ email }, { username }],
     };
@@ -75,5 +73,13 @@ export class UsersService {
   // Used in jwt local strategy
   async getUser(getUserDto: GetUserDto) {
     return this.usersRepository.findOne(getUserDto);
+  }
+
+  // Update refresh token
+  async updateRefreshToken(_id: Types.ObjectId, refreshToken: string) {
+    return this.usersRepository.findOneAndUpdate(
+      { _id },
+      { $set: { refreshToken } },
+    );
   }
 }

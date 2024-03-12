@@ -24,17 +24,20 @@ import { JwtStrategy } from './strategies/jwt.strategy';
         MONGODB_URI: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRATION: Joi.string().required(),
+        JWT_REFRESH_SECRET: Joi.string().required(),
+        JWT_REFRESH_EXPIRATION: Joi.string().required(),
       }),
     }),
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: `${configService.get('JWT_EXPIRATION')}s`,
-        },
-      }),
-    }),
+    JwtModule.register({}),
+    // JwtModule.registerAsync({
+    //   inject: [ConfigService],
+    //   useFactory: (configService: ConfigService) => ({
+    //     secret: configService.get<string>('JWT_SECRET'),
+    //     signOptions: {
+    //       expiresIn: `${configService.get('JWT_EXPIRATION')}s`,
+    //     },
+    //   }),
+    // }),
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy],
