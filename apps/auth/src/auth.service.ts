@@ -5,6 +5,7 @@ import { UserDocument } from './users/models/user.schema';
 import { CookieOptions, Response } from 'express';
 import { TokenPayload } from './interfaces/token-payload.interface';
 import { UsersService } from './users/users.service';
+import { TokenPayloadProperties } from './interfaces/token-payload-properties.interface';
 
 @Injectable()
 export class AuthService {
@@ -17,9 +18,12 @@ export class AuthService {
   async setTokens(user: UserDocument) {
     // Set the token payload to user._id for both access token
     // & refresh token
-    const tokenPayload: TokenPayload = {
+    const tokenPayload: TokenPayloadProperties = {
       userId: user._id.toHexString(),
+      username: user.username,
     };
+
+    console.log('this is from Auth Service', user._id.toHexString());
 
     const tokens = await Promise.all([
       this.jwtService.signAsync(

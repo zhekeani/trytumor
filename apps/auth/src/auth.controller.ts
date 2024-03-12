@@ -23,6 +23,8 @@ export class AuthController {
     // back the Response
     @Res({ passthrough: true }) response: Response,
   ) {
+    console.log('this is from Auth Controller', user._id);
+
     await this.authService.login(user, response);
 
     response.send(

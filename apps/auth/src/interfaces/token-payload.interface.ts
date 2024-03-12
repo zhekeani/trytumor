@@ -1,3 +1,5 @@
+import { TokenPayloadProperties } from './token-payload-properties.interface';
+
 export interface TokenPayload {
-  userId: string;
+  tokenPayload: TokenPayloadProperties;
 }

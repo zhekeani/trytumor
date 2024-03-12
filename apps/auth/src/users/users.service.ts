@@ -72,6 +72,7 @@ export class UsersService {
 
   // Used in jwt local strategy
   async getUser(getUserDto: GetUserDto) {
+    console.log('This is from Users Service', getUserDto);
     return this.usersRepository.findOne(getUserDto);
   }
 
