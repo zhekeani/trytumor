@@ -12,5 +12,19 @@ services:
       - ./apps/auth/.env
     ports:
       - '3001:3001'
-  mongo:
+  mongo-auth:
+    image: mongo
+
+  patients:
+    build:
+      context: .
+      dockerfile: ./apps/patients/Dockerfile
+    volumes:
+      - .:/usr/src/app
+    command: npm run start:dev patients
+    env_file:
+      - ./apps/patients/.env
+    ports:
+      - '3002:3002'
+  mongo-patients:
     image: mongo

@@ -1,8 +1,22 @@
 import { NestFactory } from '@nestjs/core';
 import { PatientsModule } from './patients.module';
+import { ConfigService } from '@nestjs/config';
+import { ValidationPipe } from '@nestjs/common';
+import * as cookieParser from 'cookie-parser';
 
 async function bootstrap() {
   const app = await NestFactory.create(PatientsModule);
-  await app.listen(3000);
+
+  const configService = app.get(ConfigService);
+
+  app.use(cookieParser());
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+    }),
+  );
+
+  await app.listen(configService.get('PORT'));
 }
 bootstrap();
