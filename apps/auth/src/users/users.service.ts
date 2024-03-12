@@ -72,15 +72,14 @@ export class UsersService {
 
   // Used in jwt local strategy
   async getUser(getUserDto: GetUserDto) {
-    console.log('This is from Users Service', getUserDto);
     return this.usersRepository.findOne(getUserDto);
   }
 
-  // Update refresh token
-  async updateRefreshToken(_id: Types.ObjectId, refreshToken: string) {
+  // Update the stored refresh token
+  async updateUserRefreshToken(_id: Types.ObjectId, refreshToken: string) {
     return this.usersRepository.findOneAndUpdate(
       { _id },
-      { $set: { refreshToken } },
+      { $set: { refreshToken: await bcrypt.hash(refreshToken, 10) } },
     );
   }
 }

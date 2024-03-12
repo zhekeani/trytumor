@@ -1,4 +1,4 @@
-import { Controller, Post, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -8,6 +8,8 @@ import { UserDto } from './users/dto/user.dto';
 import { UserDocument } from './users/models/user.schema';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 import { Serialize } from './interceptors/serialize.interceptor';
+import { JwtRefreshGuard } from './guards/jwt-refresh-auth.guard';
+import { RefreshToken } from './decorators/refresh-token-cookie.decorator';
 
 @Controller('auth')
 export class AuthController {
@@ -23,8 +25,6 @@ export class AuthController {
     // back the Response
     @Res({ passthrough: true }) response: Response,
   ) {
-    console.log('this is from Auth Controller', user._id);
-
     await this.authService.login(user, response);
 
     response.send(
@@ -39,5 +39,20 @@ export class AuthController {
   @Post('authenticate')
   async authenticate(@CurrentUser() user: UserDocument) {
     return user;
+  }
+
+  // Authenticate against refresh token, handled by JwtRefreshStrategy
+  @UseGuards(JwtRefreshGuard)
+  @Get('refresh')
+  async refreshToken(
+    @CurrentUser() user: UserDocument,
+    @RefreshToken() refreshToken: string,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    await this.authService.refreshAccessToken(user, refreshToken, response);
+
+    response.send(
+      plainToClass(UserDto, user, { excludeExtraneousValues: true }),
+    );
   }
 }

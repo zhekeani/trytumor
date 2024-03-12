@@ -7,7 +7,10 @@ import { Request } from 'express';
 import { TokenPayload } from '../interfaces/token-payload.interface';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(
     configService: ConfigService,
     private readonly usersService: UsersService,
@@ -17,18 +20,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
           // Get the token from the cookie
-          return request?.cookies?.Authentication;
+          return request?.cookies?.refresh_token;
         },
       ]),
       // Provide the jwt secret
-      secretOrKey: configService.get('JWT_SECRET'),
+      secretOrKey: configService.get('JWT_REFRESH_SECRET'),
     });
   }
 
-  async validate({ tokenPayload }: TokenPayload) {
+  async validate(payload: any) {
     // request object will get populated with anything that being
     // returned by this method (in this case user)
-    const { userId, username } = tokenPayload;
+    const { userId, username } = payload.tokenPayload;
 
     return this.usersService.getUser({ _id: userId });
   }

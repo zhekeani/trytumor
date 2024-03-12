@@ -1,6 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import * as bcrypt from 'bcryptjs';
+
 import { UserDocument } from './users/models/user.schema';
 import { CookieOptions, Response } from 'express';
 import { TokenPayload } from './interfaces/token-payload.interface';
@@ -15,15 +17,13 @@ export class AuthService {
     private readonly usersService: UsersService,
   ) {}
 
-  async setTokens(user: UserDocument) {
+  private async setTokens(user: UserDocument) {
     // Set the token payload to user._id for both access token
     // & refresh token
     const tokenPayload: TokenPayloadProperties = {
       userId: user._id.toHexString(),
       username: user.username,
     };
-
-    console.log('this is from Auth Service', user._id.toHexString());
 
     const tokens = await Promise.all([
       this.jwtService.signAsync(
@@ -69,14 +69,13 @@ export class AuthService {
     });
   }
 
-  // Method to create jwt token and send it back as cookie
   async login(user: UserDocument, response: Response) {
     // Create the access token and refresh token
     const { accessToken, refreshToken } = await this.setTokens(user);
 
     // If this method is called, it means the user exists
     // Update refresh token stored in database
-    await this.usersService.updateRefreshToken(user._id, refreshToken);
+    await this.usersService.updateUserRefreshToken(user._id, refreshToken);
 
     // Set the access token and refresh token to response cookie
     this.setCookie(
@@ -96,6 +95,41 @@ export class AuthService {
       {
         httpOnly: true,
         sameSite: 'lax',
+      },
+    );
+  }
+
+  async refreshAccessToken(
+    user: UserDocument,
+    refreshToken: string,
+    response: Response,
+  ) {
+    // Check does the refresh token still exist in the database
+    // incase it being revoked
+    if (!user.refreshToken) {
+      throw new ForbiddenException('Access Denied');
+    }
+
+    // Compare saved refresh token with refresh token from the
+    // cookie
+    const refreshTokenMatches = await bcrypt.compare(
+      refreshToken,
+      user.refreshToken,
+    );
+
+    if (!refreshTokenMatches) throw new ForbiddenException('Access Denied');
+
+    // Set the new access token
+    const { accessToken } = await this.setTokens(user);
+
+    // Set the token to response cookie
+    this.setCookie(
+      response,
+      'Authentication',
+      accessToken,
+      this.configService.get('JWT_EXPIRATION'),
+      {
+        httpOnly: true,
       },
     );
   }
