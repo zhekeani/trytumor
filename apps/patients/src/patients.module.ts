@@ -4,7 +4,7 @@ import * as Joi from 'joi';
 
 import { PatientsController } from './patients.controller';
 import { PatientsService } from './patients.service';
-import { DatabaseModule, JwtModule } from '@app/common';
+import { DatabaseModule, JwtModule, StorageModule } from '@app/common';
 import { PatientDocument, PatientSchema } from './models/patient.schema';
 import { PatientsRepository } from './patients.repository';
 
@@ -24,6 +24,7 @@ import { PatientsRepository } from './patients.repository';
     DatabaseModule.forFeature([
       { name: PatientDocument.name, schema: PatientSchema },
     ]),
+    StorageModule,
   ],
   controllers: [PatientsController],
   providers: [PatientsService, PatientsRepository],

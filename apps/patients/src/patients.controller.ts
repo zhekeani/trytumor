@@ -1,7 +1,17 @@
-import { Controller, Get, Req, UseGuards } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  Req,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '@app/common';
 import { Request } from 'express';
+import { FileInterceptor } from '@nestjs/platform-express';
 
 @Controller('patients')
 export class PatientsController {
@@ -15,5 +25,27 @@ export class PatientsController {
     return {
       message: "You're authenticated",
     };
+  }
+
+  @Post('save')
+  @UseInterceptors(FileInterceptor('file'))
+  async uploadProfilePicture(
+    @Body('mediaId') mediaId: string,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    console.log('This line from patients controller is called');
+
+    try {
+      await this.patientsService.saveProfilePicture(
+        'media/' + mediaId,
+        file.mimetype,
+        file.buffer,
+        [{ mediaId: 'test-image' }],
+      );
+      return { success: true, message: 'Upload Success' };
+    } catch (error) {
+      console.error('Error while uploading:', error);
+      return { success: false, message: 'Upload Failed' };
+    }
   }
 }
