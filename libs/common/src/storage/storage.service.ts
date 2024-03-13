@@ -1,19 +1,23 @@
-import { Storage } from '@google-cloud/storage';
-import { Injectable } from '@nestjs/common';
+import { Bucket, Storage } from '@google-cloud/storage';
+import { Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { StorageModuleConfig } from './interfaces/storage-module-config.interface';
 
 @Injectable()
 export class StorageService {
   private storage: Storage;
+  private bucket: Bucket;
 
-  constructor(readonly configService: ConfigService) {
+  constructor(@Inject('CONFIG') storageConfig: StorageModuleConfig) {
     this.storage = new Storage({
-      projectId: configService.get('GOOGLE_STORAGE_PROJECT_ID'),
+      projectId: storageConfig.projectId,
       credentials: {
-        client_email: configService.get('GOOGLE_STORAGE_CLIENT_EMAIL'),
-        private_key: configService.get('GOOGLE_STORAGE_PRIVATE_KEY'),
+        client_email: storageConfig.clientEmail,
+        private_key: storageConfig.privateKey,
       },
     });
+
+    this.bucket = this.storage.bucket(storageConfig.bucketName);
   }
 
   async save(
@@ -24,18 +28,13 @@ export class StorageService {
   ) {
     const object = metadata.reduce((obj, item) => Object.assign(obj, item), {});
 
-    const bucketName = this.configService.get('GOOGLE_STORAGE_MEDIA_BUCKET');
-
-    console.log('This line in storage service is called', bucketName);
-    const file = this.storage.bucket(bucketName).file(path);
-
+    const file = this.bucket.file(path);
     const stream = file.createWriteStream();
     stream.on('finish', async () => {
       return await file.setMetadata({
         metadata: object,
       });
     });
-
     stream.end(media);
   }
 }

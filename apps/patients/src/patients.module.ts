@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 
 import { PatientsController } from './patients.controller';
@@ -24,7 +24,15 @@ import { PatientsRepository } from './patients.repository';
     DatabaseModule.forFeature([
       { name: PatientDocument.name, schema: PatientSchema },
     ]),
-    StorageModule,
+    StorageModule.forRootAsync({
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        projectId: configService.get('GOOGLE_STORAGE_PROJECT_ID'),
+        clientEmail: configService.get('GOOGLE_STORAGE_CLIENT_EMAIL'),
+        privateKey: configService.get('GOOGLE_STORAGE_PRIVATE_KEY'),
+        bucketName: configService.get('GOOGLE_STORAGE_BUCKET_NAME'),
+      }),
+    }),
   ],
   controllers: [PatientsController],
   providers: [PatientsService, PatientsRepository],

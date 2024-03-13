@@ -40,7 +40,7 @@ export class PatientsController {
         'media/' + mediaId,
         file.mimetype,
         file.buffer,
-        [{ mediaId: 'test-image' }],
+        [{ mediaId: mediaId }],
       );
       return { success: true, message: 'Upload Success' };
     } catch (error) {
