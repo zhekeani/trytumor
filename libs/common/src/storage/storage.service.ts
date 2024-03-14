@@ -1,14 +1,27 @@
 import { Bucket, Storage } from '@google-cloud/storage';
-import { Inject, Injectable } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { StorageModuleConfig } from './interfaces/storage-module-config.interface';
+import { error } from 'console';
+import { resolve } from 'path';
+import { StreamOutput } from './interfaces/stream-output.interface';
 
 @Injectable()
 export class StorageService {
+  private logger: Logger;
+
   private storage: Storage;
   private bucket: Bucket;
+  private bucketName: string;
 
   constructor(@Inject('CONFIG') storageConfig: StorageModuleConfig) {
+    this.logger = new Logger();
+
     this.storage = new Storage({
       projectId: storageConfig.projectId,
       credentials: {
@@ -18,6 +31,7 @@ export class StorageService {
     });
 
     this.bucket = this.storage.bucket(storageConfig.bucketName);
+    this.bucketName = storageConfig.bucketName;
   }
 
   async save(
@@ -26,15 +40,52 @@ export class StorageService {
     media: Buffer,
     metadata: { [key: string]: string }[],
   ) {
-    const object = metadata.reduce((obj, item) => Object.assign(obj, item), {});
+    // Returns promises explicitly because the method uses stream operations
+    return new Promise<StreamOutput>((resolve, reject) => {
+      // Combine all custom metadata
+      const object = metadata.reduce(
+        (obj, item) => Object.assign(obj, item),
+        {},
+      );
 
-    const file = this.bucket.file(path);
-    const stream = file.createWriteStream();
-    stream.on('finish', async () => {
-      return await file.setMetadata({
-        metadata: object,
+      // Create stream to upload
+      const file = this.bucket.file(path);
+      const stream = file.createWriteStream({
+        // Set the default metadata
+        metadata: {
+          contentType,
+        },
       });
+
+      stream
+        // Listening to error event
+        .on('error', (error) => {
+          this.logger.warn('Stream upload error:', error.message);
+
+          reject(new InternalServerErrorException(error.message));
+        })
+        // Listening to finish event
+        .on('finish', async () => {
+          await file.setMetadata({
+            metadata: object,
+          });
+
+          // Make the file publicly accessible
+          await file.makePublic();
+
+          // Construct the public url
+          const streamOutput = {
+            publicUrl: `https://storage.googleapis.com/${this.bucketName}/${path}`,
+          };
+
+          // Resolve the promise
+          resolve(streamOutput);
+        });
+      stream.end(media);
     });
-    stream.end(media);
+  }
+
+  async delete(path: string) {
+    return this.bucket.file(path).delete({ ignoreNotFound: true });
   }
 }

@@ -1,3 +1,4 @@
+import { Transform, Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsDate,
@@ -10,19 +11,23 @@ import {
 
 export class CreatePatientDto {
   @IsUrl()
+  @IsOptional()
   profilePictureURL: string;
 
   @IsString()
   fullName: string;
 
   @IsDate()
+  @Type(() => Date)
   birthDate: Date;
 
-  @IsNumber()
-  weight: number;
-
-  @IsNumber()
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber({})
   height: number;
+
+  @Transform(({ value }) => parseInt(value))
+  @IsNumber({})
+  weight: number;
 
   @IsEmail()
   email: string;

@@ -4,7 +4,7 @@ import { AbstractDocument } from '@app/common';
 @Schema()
 export class PatientDocument extends AbstractDocument {
   @Prop()
-  profilePictureURL: string;
+  profilePictureURL?: string;
 
   @Prop()
   fullName: string;

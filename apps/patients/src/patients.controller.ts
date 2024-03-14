@@ -2,6 +2,8 @@ import {
   Body,
   Controller,
   Get,
+  Param,
+  Patch,
   Post,
   Req,
   UploadedFile,
@@ -12,6 +14,7 @@ import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '@app/common';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
+import { CreatePatientDto } from './dto/create-patient.dto';
 
 @Controller('patients')
 export class PatientsController {
@@ -27,25 +30,31 @@ export class PatientsController {
     };
   }
 
-  @Post('save')
+  @Post('create')
   @UseInterceptors(FileInterceptor('file'))
-  async uploadProfilePicture(
-    @Body('mediaId') mediaId: string,
-    @UploadedFile() file: Express.Multer.File,
+  async createPatient(
+    @Body() createPatientDto: CreatePatientDto,
+    @UploadedFile() profilePictureFile: Express.Multer.File,
   ) {
-    console.log('This line from patients controller is called');
+    console.log(
+      'This line from patients controller is called',
+      profilePictureFile,
+    );
 
-    try {
-      await this.patientsService.saveProfilePicture(
-        'media/' + mediaId,
-        file.mimetype,
-        file.buffer,
-        [{ mediaId: mediaId }],
-      );
-      return { success: true, message: 'Upload Success' };
-    } catch (error) {
-      console.error('Error while uploading:', error);
-      return { success: false, message: 'Upload Failed' };
-    }
+    return this.patientsService.create(createPatientDto, profilePictureFile);
+  }
+
+  @Patch('update/:id')
+  @UseInterceptors(FileInterceptor('file'))
+  async updatePatient(
+    @Body() updatePatientDto: Partial<CreatePatientDto>,
+    @Param('id') patientId: string,
+    @UploadedFile() profilePictureFile: Express.Multer.File,
+  ) {
+    return this.patientsService.update(
+      patientId,
+      updatePatientDto,
+      profilePictureFile,
+    );
   }
 }
