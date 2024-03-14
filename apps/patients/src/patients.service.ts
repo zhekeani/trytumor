@@ -11,11 +11,15 @@ export class PatientsService {
     private readonly storageService: StorageService,
   ) {}
 
+  private constructPath(patientId: string) {
+    return `media/${patientId}/profile-picture/profile-pic-${patientId}`;
+  }
+
   private async saveProfilePicture(
     patientId: string,
     profilePictureFile: Express.Multer.File,
   ) {
-    const filePath = `media/${patientId}/profile-picture/profile-pic-${patientId}`;
+    const filePath = this.constructPath(patientId);
 
     return this.storageService.save(
       filePath,
@@ -23,6 +27,14 @@ export class PatientsService {
       profilePictureFile.buffer,
       [{ patientId }],
     );
+  }
+
+  async fetchPatients() {
+    return this.patientsRepository.find({});
+  }
+
+  async fetchPatientById(patientId: string) {
+    return this.patientsRepository.findOne({ _id: patientId });
   }
 
   async create(
@@ -51,17 +63,27 @@ export class PatientsService {
     updatePatientDto: Partial<CreatePatientDto>,
     profilePictureFile: Express.Multer.File,
   ) {
-    // Check if the profile picture get updated
-    if (profilePictureFile) {
-      // Doesn't need the return value, the profile picture
-      // url stay the same
-      await this.saveProfilePicture(patientId, profilePictureFile);
-    }
-
-    // Update the patient
-    return this.patientsRepository.findOneAndUpdate(
+    // Update the database first to make sure patient to update exist
+    const updatedPatient = await this.patientsRepository.findOneAndUpdate(
       { _id: patientId },
       { $set: { ...updatePatientDto } },
     );
+
+    // Check if the patient exist
+    if (updatedPatient) {
+      // Check if the profile picture get updated
+      if (profilePictureFile) {
+        // Doesn't need the return value, the profile picture
+        // url stay the same
+        await this.saveProfilePicture(patientId, profilePictureFile);
+      }
+    }
+
+    return updatedPatient;
+  }
+
+  async delete(patientId: string) {
+    await this.storageService.delete(this.constructPath(patientId));
+    return this.patientsRepository.findOneAndDelete({ _id: patientId });
   }
 }

@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -30,6 +31,16 @@ export class PatientsController {
     };
   }
 
+  @Get()
+  async getPatients() {
+    return this.patientsService.fetchPatients();
+  }
+
+  @Get(':id')
+  async getPatientById(@Param('id') patientId: string) {
+    return this.patientsService.fetchPatientById(patientId);
+  }
+
   @Post('create')
   @UseInterceptors(FileInterceptor('file'))
   async createPatient(
@@ -56,5 +67,10 @@ export class PatientsController {
       updatePatientDto,
       profilePictureFile,
     );
+  }
+
+  @Delete('delete/:id')
+  async deletePatient(@Param('id') patientId: string) {
+    return this.patientsService.delete(patientId);
   }
 }
