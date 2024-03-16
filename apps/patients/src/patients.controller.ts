@@ -41,6 +41,7 @@ export class PatientsController {
     return this.patientsService.fetchPatientById(patientId);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Post('create')
   @UseInterceptors(FileInterceptor('file'))
   async createPatient(

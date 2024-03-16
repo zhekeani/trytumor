@@ -2,11 +2,11 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 
-import { PatientsController } from './patients.controller';
-import { PatientsService } from './patients.service';
-import { DatabaseModule, JwtModule, StorageModule } from '@app/common';
+import { DatabaseModule, StorageModule } from '@app/common';
 import { PatientDocument, PatientSchema } from './models/patient.schema';
+import { PatientsController } from './patients.controller';
 import { PatientsRepository } from './patients.repository';
+import { PatientsService } from './patients.service';
 
 @Module({
   imports: [
@@ -19,7 +19,6 @@ import { PatientsRepository } from './patients.repository';
         JWT_SECRET: Joi.string().required(),
       }),
     }),
-    JwtModule,
     DatabaseModule,
     DatabaseModule.forFeature([
       { name: PatientDocument.name, schema: PatientSchema },

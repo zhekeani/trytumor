@@ -11,11 +11,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
-          console.log('This is from common auth guard', request);
           return request?.cookies?.Authentication;
         },
       ]),
       secretOrKey: configService.get('JWT_SECRET'),
+      algorithms: ['HS256'],
     });
   }
 

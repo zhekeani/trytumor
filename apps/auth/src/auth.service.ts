@@ -33,13 +33,15 @@ export class AuthService {
         {
           secret: this.configService.get('JWT_SECRET'),
           expiresIn: `${this.configService.get('JWT_EXPIRATION')}s`,
+          algorithm: 'HS256',
         },
       ),
       this.jwtService.signAsync(
         { tokenPayload },
         {
           secret: this.configService.get('JWT_REFRESH_SECRET'),
-          expiresIn: `${this.configService.get('JWT_REFRESH_EXPIRATION')}`,
+          expiresIn: `${this.configService.get('JWT_REFRESH_EXPIRATION')}s`,
+          algorithm: 'HS256',
         },
       ),
     ]);
