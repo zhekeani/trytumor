@@ -1,12 +1,15 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { DatabaseModule, StorageModule } from '@app/common';
 import * as Joi from 'joi';
 
-import { DatabaseModule, StorageModule } from '@app/common';
-import { PatientDocument, PatientSchema } from './models/patient.schema';
-import { PatientsController } from './patients.controller';
-import { PatientsRepository } from './patients.repository';
-import { PatientsService } from './patients.service';
+import { PredictionsController } from './predictions.controller';
+import { PredictionsService } from './predictions.service';
+import {
+  PredictionDocument,
+  PredictionSchema,
+} from './models/prediction.schema';
+import { PredictionsRepository } from './predictions.repository';
 
 @Module({
   imports: [
@@ -21,11 +24,12 @@ import { PatientsService } from './patients.service';
         GOOGLE_STORAGE_CLIENT_EMAIL: Joi.string().required(),
         GOOGLE_STORAGE_BUCKET_NAME: Joi.string().required(),
         GOOGLE_STORAGE_PRIVATE_KEY: Joi.string().required(),
+        PREDICTION_URL: Joi.string().required(),
       }),
     }),
     DatabaseModule,
     DatabaseModule.forFeature([
-      { name: PatientDocument.name, schema: PatientSchema },
+      { name: PredictionDocument.name, schema: PredictionSchema },
     ]),
     StorageModule.forRootAsync({
       inject: [ConfigService],
@@ -37,7 +41,7 @@ import { PatientsService } from './patients.service';
       }),
     }),
   ],
-  controllers: [PatientsController],
-  providers: [PatientsService, PatientsRepository],
+  controllers: [PredictionsController],
+  providers: [PredictionsService, PredictionsRepository],
 })
-export class PatientsModule {}
+export class PredictionsModule {}

@@ -13,6 +13,9 @@ export class PatientDocument extends AbstractDocument {
   birthDate: Date;
 
   @Prop()
+  gender: string;
+
+  @Prop()
   weight: number;
 
   @Prop()

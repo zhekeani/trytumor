@@ -28,3 +28,17 @@ services:
       - '3002:3002'
   mongo-patients:
     image: mongo
+
+  predictions:
+    build:
+      context: .
+      dockerfile: ./apps/predictions/Dockerfile
+    volumes:
+      - .:/usr/src/app
+    command: npm run start:dev predictions
+    env_file:
+      - ./apps/predictions/.env
+    ports:
+      - '3003:3003'
+  mongo-predictions:
+    image: mongo

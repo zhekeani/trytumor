@@ -3,11 +3,14 @@ import {
   ArrayMinSize,
   IsDate,
   IsEmail,
+  IsIn,
+  IsNotEmpty,
   IsNumber,
   IsOptional,
   IsString,
   IsUrl,
 } from 'class-validator';
+import { Gender } from '../interfaces/gender.interface';
 
 export class CreatePatientDto {
   @IsUrl()
@@ -20,6 +23,11 @@ export class CreatePatientDto {
   @IsDate()
   @Type(() => Date)
   birthDate: Date;
+
+  @IsString()
+  @IsNotEmpty()
+  @IsIn(['female', 'male'])
+  gender: Gender;
 
   @Transform(({ value }) => parseInt(value))
   @IsNumber({})
