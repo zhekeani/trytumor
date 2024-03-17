@@ -1,5 +1,11 @@
 import { Type } from 'class-transformer';
-import { IsArray, IsNumber, IsOptional, IsUrl } from 'class-validator';
+import {
+  IsArray,
+  IsNumber,
+  IsOptional,
+  IsString,
+  IsUrl,
+} from 'class-validator';
 
 export class PercentageDto {
   @IsNumber()
@@ -19,6 +25,10 @@ export class PredictionResultDto {
   @IsUrl()
   @IsOptional()
   imageUrl: string;
+
+  @IsString()
+  @IsOptional()
+  imageIndex: number;
 
   @IsArray()
   @Type(() => PercentageDto)

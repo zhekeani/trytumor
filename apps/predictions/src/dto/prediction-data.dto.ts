@@ -9,7 +9,6 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { PredictionResult } from '../interfaces/prediction-result.interface.ts';
 import { PercentageDto, PredictionResultDto } from './prediction-result.dto.js';
 
 export class PredictionDataDto {
@@ -18,7 +17,7 @@ export class PredictionDataDto {
   number: number;
 
   @IsString()
-  doctorId: string;
+  userId: string;
 
   @IsString()
   doctorName: string;
@@ -30,7 +29,7 @@ export class PredictionDataDto {
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => PredictionResultDto)
-  results: PredictionResult[];
+  results: PredictionResultDto[];
 
   @ValidateNested()
   @Type(() => PercentageDto)

@@ -1,26 +1,29 @@
 import { AbstractDocument } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import {
-  Percentage,
-  PredictionResult,
-} from '../interfaces/prediction-result.interface.ts';
+import { Percentage, PredictionResult } from './prediction-result.schema.ts';
 
 @Schema()
-export class PredictionDocument extends AbstractDocument {
+export class PatientData {
   @Prop()
-  patientId: string;
+  id: string;
 
   @Prop()
-  patientName: string;
+  fullName: string;
+
+  @Prop({ type: String, enum: ['female', 'male'] })
+  gender: string;
 
   @Prop()
-  patientBirthDate: Date;
+  birthDate: Date;
+}
+
+@Schema()
+export class PredictionData {
+  @Prop()
+  number: number;
 
   @Prop()
-  patientGender: string;
-
-  @Prop()
-  doctorId: string;
+  userId: string;
 
   @Prop()
   doctorName: string;
@@ -28,20 +31,26 @@ export class PredictionDocument extends AbstractDocument {
   @Prop()
   dateAndTime: Date;
 
-  @Prop()
-  number: number;
-
-  @Prop()
+  @Prop({ type: [PredictionResult] })
   results: PredictionResult[];
 
-  @Prop()
-  resultsMean: Percentage[];
+  @Prop({ type: Percentage })
+  resultsMean: Percentage;
 
   @Prop()
   fileName: string;
 
   @Prop()
   additionalNotes: string[];
+}
+
+@Schema()
+export class PredictionDocument extends AbstractDocument {
+  @Prop({ type: PatientData })
+  patientData: PatientData;
+
+  @Prop({ type: [PredictionData] })
+  predictionsData?: PredictionData[];
 }
 
 export const PredictionSchema =
