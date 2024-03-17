@@ -1,22 +1,13 @@
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-} from '@nestjs/common';
-import { PredictionsRepository } from './predictions.repository';
+import { StorageService } from '@app/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import {
-  PatientNewToPredictionsDto,
-  Services,
-  StorageService,
-} from '@app/common';
+import axios from 'axios';
+import { CreatePredictionDto } from './dto/create-prediction-dto';
 import {
   PercentageDto,
   PredictionResultDto,
 } from './dto/prediction-result.dto';
-import axios from 'axios';
-import { CreatePredictionDto } from './dto/create-prediction-dto';
-import { ClientProxy } from '@nestjs/microservices';
+import { PredictionsRepository } from './repositories/predictions.repository';
 
 @Injectable()
 export class PredictionsService {
@@ -24,8 +15,6 @@ export class PredictionsService {
     private readonly predictionsRepository: PredictionsRepository,
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
-    @Inject(Services.Patients) private readonly patientsClient: ClientProxy,
-    @Inject(Services.Doctors) private readonly doctorsClient: ClientProxy,
   ) {}
 
   private async sendPrediction(
@@ -79,13 +68,5 @@ export class PredictionsService {
 
   async fetchPredictions() {
     return this.predictionsRepository.find({});
-  }
-
-  async createPredictionSpot(patientData: PatientNewToPredictionsDto) {
-    const predictionSpot = {
-      patientData,
-    };
-
-    return this.predictionsRepository.create(predictionSpot);
   }
 }
