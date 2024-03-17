@@ -17,6 +17,6 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(configService.get('PORT'));
+  await app.listen(configService.get('HTTP_PORT'));
 }
 bootstrap();

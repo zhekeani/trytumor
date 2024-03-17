@@ -21,7 +21,8 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
 
       // Check the must provided env
       validationSchema: Joi.object({
-        PORT: Joi.number().required(),
+        HTTP_PORT: Joi.number().required(),
+        RMQ_PORT: Joi.number().required(),
         MONGODB_URI: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRATION: Joi.string().required(),

@@ -17,7 +17,8 @@ import { PredictionsRepository } from './predictions.repository';
       isGlobal: true,
 
       validationSchema: Joi.object({
-        PORT: Joi.number().required(),
+        HTTP_PORT: Joi.number().required(),
+        RMQ_PORT: Joi.number().required(),
         MONGODB_URI: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         GOOGLE_STORAGE_PROJECT_ID: Joi.string().required(),
