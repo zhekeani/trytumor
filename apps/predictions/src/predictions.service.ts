@@ -1,13 +1,22 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  InternalServerErrorException,
+} from '@nestjs/common';
 import { PredictionsRepository } from './predictions.repository';
 import { ConfigService } from '@nestjs/config';
-import { StorageService } from '@app/common';
+import {
+  PatientNewToPredictionsDto,
+  Services,
+  StorageService,
+} from '@app/common';
 import {
   PercentageDto,
   PredictionResultDto,
 } from './dto/prediction-result.dto';
 import axios from 'axios';
 import { CreatePredictionDto } from './dto/create-prediction-dto';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class PredictionsService {
@@ -15,6 +24,8 @@ export class PredictionsService {
     private readonly predictionsRepository: PredictionsRepository,
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
+    @Inject(Services.Patients) private readonly patientsClient: ClientProxy,
+    @Inject(Services.Doctors) private readonly doctorsClient: ClientProxy,
   ) {}
 
   private async sendPrediction(
@@ -70,16 +81,11 @@ export class PredictionsService {
     return this.predictionsRepository.find({});
   }
 
-  async createPatient() {
-    const dummyData = {
-      patientData: {
-        id: '1234567890', // Example ID
-        fullName: 'John Doe',
-        gender: 'male', // Assuming a male gender
-        birthDate: new Date('1990-01-01'), // Example birth date
-      },
+  async createPredictionSpot(patientData: PatientNewToPredictionsDto) {
+    const predictionSpot = {
+      patientData,
     };
 
-    return this.predictionsRepository.create(dummyData);
+    return this.predictionsRepository.create(predictionSpot);
   }
 }

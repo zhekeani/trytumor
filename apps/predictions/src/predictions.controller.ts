@@ -10,6 +10,9 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { AuthToken } from './decorators/auth-token.decorator';
 import { PredictionsService } from './predictions.service';
 import { CreatePredictionDto } from './dto/create-prediction-dto';
+import { EventPattern, Payload } from '@nestjs/microservices';
+import { PatientsEvents } from '../../../libs/common/src';
+import { PatientNewToPredictionsDto } from '@app/common';
 
 @Controller('predictions')
 export class PredictionsController {
@@ -36,8 +39,19 @@ export class PredictionsController {
     );
   }
 
-  @Post('create-patient')
-  async createPatient() {
-    return this.predictionsService.createPatient();
+  // Routes to listen to events
+
+  // Listen to "patient-new" event
+  @EventPattern(PatientsEvents.PatientNew)
+  async newPatient(@Payload() data: PatientNewToPredictionsDto) {
+    console.log('Accepted data in predictions: ', data);
+
+    this.predictionsService.createPredictionSpot(data);
   }
+
+  // Listen to "patient-edit" event
+
+  // Listen to "patient-delete" event
+
+  // Listen to "doctor-edit" event
 }

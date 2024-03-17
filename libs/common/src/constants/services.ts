@@ -1,5 +1,5 @@
 export enum Services {
-  Doctor = 'auth',
-  Patient = 'patients',
-  Prediction = 'predictions',
+  Doctors = 'auth',
+  Patients = 'patients',
+  Predictions = 'predictions',
 }

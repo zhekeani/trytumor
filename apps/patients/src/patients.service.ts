@@ -1,14 +1,23 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { PatientsRepository } from './patients.repository';
 import { CreatePatientDto } from './dto/create-patient.dto';
-import { StorageService } from '@app/common';
+import {
+  PatientsEvents,
+  Services,
+  StorageService,
+  PatientNewToPredictionsDto,
+} from '@app/common';
 import { Types } from 'mongoose';
+import { ClientProxy } from '@nestjs/microservices';
 
 @Injectable()
 export class PatientsService {
   constructor(
     private readonly patientsRepository: PatientsRepository,
     private readonly storageService: StorageService,
+    @Inject(Services.Doctors) private readonly doctorsClient: ClientProxy,
+    @Inject(Services.Predictions)
+    private readonly predictionsClient: ClientProxy,
   ) {}
 
   private constructPath(patientId: string) {
@@ -55,7 +64,20 @@ export class PatientsService {
       createPatientDto.profilePictureURL = publicUrl;
     }
 
-    return this.patientsRepository.create(createPatientDto, patientId);
+    const newPatient = await this.patientsRepository.create(
+      createPatientDto,
+      patientId,
+    );
+
+    // emit patient creation event to Predictions Service
+    this.predictionsClient.emit(PatientsEvents.PatientNew, {
+      id: newPatient._id,
+      fullName: newPatient.fullName,
+      gender: newPatient.gender,
+      birthDate: newPatient.birthDate,
+    } as unknown as PatientNewToPredictionsDto);
+
+    return newPatient;
   }
 
   async update(
@@ -78,6 +100,14 @@ export class PatientsService {
         await this.saveProfilePicture(patientId, profilePictureFile);
       }
     }
+
+    // emit patient update event to Predictions Service
+    this.predictionsClient.emit(PatientsEvents.PatientEdit, {
+      id: patientId,
+      fullName: updatedPatient.fullName,
+      gender: updatedPatient.gender,
+      birthDate: updatedPatient.birthDate,
+    } as unknown as Partial<PatientNewToPredictionsDto>);
 
     return updatedPatient;
   }

@@ -25,7 +25,7 @@ services:
     env_file:
       - ./apps/patients/.env
     ports:
-      - '3002:3002'
+      - '3003:3003'
   mongo-patients:
     image: mongo
 
@@ -39,6 +39,6 @@ services:
     env_file:
       - ./apps/predictions/.env
     ports:
-      - '3003:3003'
+      - '3005:3005'
   mongo-predictions:
     image: mongo
