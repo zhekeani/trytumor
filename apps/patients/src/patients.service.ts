@@ -108,6 +108,13 @@ export class PatientsService {
 
   async delete(patientId: string) {
     await this.storageService.delete(this.constructPath(patientId));
-    return this.patientsRepository.findOneAndDelete({ _id: patientId });
+
+    const deletedPatient = this.patientsRepository.findOneAndDelete({
+      _id: patientId,
+    });
+
+    this.eventsService.emitPatientDeleteEvent({ id: patientId });
+
+    return deletedPatient;
   }
 }

@@ -10,6 +10,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { UsernameEmailStringify } from './middlewares/username-email-stringify.middleware';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -23,6 +24,10 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
       validationSchema: Joi.object({
         HTTP_PORT: Joi.number().required(),
         RMQ_PORT: Joi.number().required(),
+
+        PREDICTIONS_HOST: Joi.string().required(),
+        PREDICTIONS_PORT: Joi.number().required(),
+
         MONGODB_URI: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRATION: Joi.string().required(),
@@ -31,15 +36,7 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
       }),
     }),
     JwtModule.register({}),
-    // JwtModule.registerAsync({
-    //   inject: [ConfigService],
-    //   useFactory: (configService: ConfigService) => ({
-    //     secret: configService.get<string>('JWT_SECRET'),
-    //     signOptions: {
-    //       expiresIn: `${configService.get('JWT_EXPIRATION')}s`,
-    //     },
-    //   }),
-    // }),
+    EventsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, JwtRefreshStrategy],

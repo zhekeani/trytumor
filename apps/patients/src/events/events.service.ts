@@ -1,5 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import {
+  PatientDeleteDto,
   PatientNewToPredictionsDto,
   PatientsEvents,
   Services,
@@ -14,15 +15,22 @@ export class EventsService {
     private readonly predictionsClient: ClientProxy,
   ) {}
 
-  async emitPatientNewEvent(patientData: PatientNewToPredictionsDto) {
+  async emitPatientNewEvent(patientNewDto: PatientNewToPredictionsDto) {
     this.predictionsClient.emit(PatientsEvents.PatientNew, {
-      ...patientData,
+      ...patientNewDto,
     });
   }
 
-  async emitPatientEditEvent(patientData: Partial<PatientNewToPredictionsDto>) {
+  async emitPatientEditEvent(
+    patientEditDto: Partial<PatientNewToPredictionsDto>,
+  ) {
     this.predictionsClient.emit(PatientsEvents.PatientEdit, {
-      ...patientData,
+      ...patientEditDto,
     });
+  }
+
+  async emitPatientDeleteEvent(patientDeleteDto: PatientDeleteDto) {
+    this.predictionsClient.emit(PatientsEvents.PatientDelete, patientDeleteDto);
+    this.doctorsClient.emit(PatientsEvents.PatientDelete, patientDeleteDto);
   }
 }

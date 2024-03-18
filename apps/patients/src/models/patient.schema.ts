@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { AbstractDocument } from '@app/common';
+import { AbstractDocument, PredictionsThumbnail } from '@app/common';
 
 @Schema()
 export class PatientDocument extends AbstractDocument {
@@ -35,6 +35,9 @@ export class PatientDocument extends AbstractDocument {
 
   @Prop()
   allergies: string[];
+
+  @Prop({ type: [PredictionsThumbnail] })
+  predictions?: PredictionsThumbnail[];
 }
 
 export const PatientSchema = SchemaFactory.createForClass(PatientDocument);

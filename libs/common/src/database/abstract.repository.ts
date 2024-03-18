@@ -56,6 +56,13 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     return document;
   }
 
+  async updateMany(
+    filterQuery: FilterQuery<TDocument>,
+    update: UpdateQuery<TDocument>,
+  ) {
+    return this.model.updateMany(filterQuery, update);
+  }
+
   async find(filterQuery: FilterQuery<TDocument>) {
     // Immediately return the result because find method return an
     // array, its simply return empty array if there're no documents

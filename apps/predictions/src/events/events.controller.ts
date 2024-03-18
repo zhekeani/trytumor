@@ -1,7 +1,11 @@
 import { Controller } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { EventPattern, Payload } from '@nestjs/microservices';
-import { PatientNewToPredictionsDto, PatientsEvents } from '@app/common';
+import {
+  PatientDeleteDto,
+  PatientNewToPredictionsDto,
+  PatientsEvents,
+} from '@app/common';
 
 @Controller('events')
 export class EventsController {
@@ -11,23 +15,39 @@ export class EventsController {
 
   // Listen to "patient-new" event
   @EventPattern(PatientsEvents.PatientNew)
-  async listenToPatientNew(@Payload() data: PatientNewToPredictionsDto) {
-    console.log('Accepted data in predictions events route: ', data);
+  async listenToPatientNewEvent(
+    @Payload() patientNewDto: PatientNewToPredictionsDto,
+  ) {
+    console.log('Accepted data in predictions events route: ', patientNewDto);
 
-    this.eventsService.handlePatientNew(data);
+    this.eventsService.handlePatientNewEvent(patientNewDto);
   }
 
   // Listen to "patient-edit" event
   @EventPattern(PatientsEvents.PatientEdit)
-  async listenToPatientEdit(
-    @Payload() data: Partial<PatientNewToPredictionsDto>,
+  async listenToPatientEditEvent(
+    @Payload() patientEditDto: Partial<PatientNewToPredictionsDto>,
   ) {
-    console.log('Accepted data in predictions patient-edit listener', data);
+    console.log(
+      'Accepted data in predictions patient-edit listener',
+      patientEditDto,
+    );
 
-    this.eventsService.handlePatientEdit(data);
+    this.eventsService.handlePatientEditEvent(patientEditDto);
   }
 
   // Listen to "patient-delete" event
+  @EventPattern(PatientsEvents.PatientDelete)
+  async listenToPatientDeleteEvent(
+    @Payload() patientDeleteDto: PatientDeleteDto,
+  ) {
+    console.log(
+      'Accepted data in predictions patient-delete listener',
+      patientDeleteDto,
+    );
+
+    this.eventsService.handlePatientDeleteEvent(patientDeleteDto);
+  }
 
   // Listen to "doctor-edit" event
 }
