@@ -24,7 +24,7 @@ export class PercentageDto {
 export class PredictionResultDto {
   @IsUrl()
   @IsOptional()
-  imageUrl: string;
+  imageUrl?: string;
 
   @IsString()
   @IsOptional()

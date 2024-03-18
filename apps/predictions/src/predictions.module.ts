@@ -1,4 +1,4 @@
-import { DatabaseModule, StorageModule } from '@app/common';
+import { DatabaseModule, JwtStrategy, StorageModule } from '@app/common';
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
@@ -53,6 +53,6 @@ import { PredictionsRepository } from './repositories/predictions.repository';
     }),
   ],
   controllers: [PredictionsController],
-  providers: [PredictionsService, PredictionsRepository],
+  providers: [PredictionsService, PredictionsRepository, JwtStrategy],
 })
 export class PredictionsModule {}

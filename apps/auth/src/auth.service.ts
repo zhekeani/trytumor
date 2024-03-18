@@ -5,9 +5,8 @@ import * as bcrypt from 'bcryptjs';
 
 import { UserDocument } from './users/models/user.schema';
 import { CookieOptions, Response } from 'express';
-import { TokenPayload } from './interfaces/token-payload.interface';
+import { TokenPayload, TokenPayloadProperties } from '@app/common';
 import { UsersService } from './users/users.service';
-import { TokenPayloadProperties } from './interfaces/token-payload-properties.interface';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +22,7 @@ export class AuthService {
     const tokenPayload: TokenPayloadProperties = {
       userId: user._id.toHexString(),
       username: user.username,
+      fullName: user.fullName,
     };
 
     const tokens = await Promise.all([

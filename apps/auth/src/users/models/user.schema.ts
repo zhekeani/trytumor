@@ -12,6 +12,9 @@ export class UserDocument extends AbstractDocument {
   username: string;
 
   @Prop()
+  fullName: string;
+
+  @Prop()
   password: string;
 
   @Prop()

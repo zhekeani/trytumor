@@ -3,13 +3,21 @@ import {
   Controller,
   Get,
   Post,
+  Req,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { AuthToken } from './decorators/auth-token.decorator';
 import { CreatePredictionDto } from './dto/create-prediction-dto';
 import { PredictionsService } from './predictions.service';
+import {
+  AuthenticatedUser,
+  JwtAuthGuard,
+  TokenPayloadProperties,
+} from '@app/common';
+import { Request } from 'express';
 
 @Controller('predictions')
 export class PredictionsController {
@@ -21,15 +29,19 @@ export class PredictionsController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('files'))
   async createPrediction(
     @AuthToken() authToken: string,
     @UploadedFiles() imageFiles: Express.Multer.File[],
     @Body() createPredictionDto: CreatePredictionDto,
+    @Req() request: Request,
   ) {
     // console.log(imageFiles);
+    const tokenPayload = request.user as TokenPayloadProperties;
 
     return this.predictionsService.create(
+      tokenPayload,
       authToken,
       imageFiles,
       createPredictionDto,

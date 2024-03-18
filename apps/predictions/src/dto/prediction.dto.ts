@@ -14,6 +14,6 @@ export class PredictionDto {
   @IsArray()
   @ArrayMinSize(0)
   @IsOptional()
-  @ValidateNested({ each: true })
-  predictionsData: PredictionDataDto[];
+  @ValidateNested()
+  predictionData?: PredictionDataDto;
 }

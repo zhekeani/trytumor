@@ -14,6 +14,9 @@ export class EventsService {
     @Inject(Services.Patients) private readonly patientsClient: ClientProxy,
     @Inject(Services.Doctors) private readonly doctorsClient: ClientProxy,
   ) {}
+
+  async emitPredictionNewEvent() {}
+
   async handlePatientNewEvent(patientNewDto: PatientNewToPredictionsDto) {
     const spotForNewPatient = {
       patientData: patientNewDto,

@@ -1,6 +1,13 @@
 import { Logger, NotFoundException } from '@nestjs/common';
 import { AbstractDocument } from './abstract.schema';
-import { FilterQuery, Model, Types, UpdateQuery } from 'mongoose';
+import {
+  AggregateOptions,
+  FilterQuery,
+  Model,
+  PipelineStage,
+  Types,
+  UpdateQuery,
+} from 'mongoose';
 
 // Class that extends this abstract class need to provide
 // generic document type that satisfy AbstractDocument
@@ -75,5 +82,9 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     // Immediately return the result, because it will return null
     // if there's no document to delete
     return this.model.findOneAndDelete(filterQuery).lean<TDocument>(true);
+  }
+
+  async aggregate(pipeline?: PipelineStage[], options?: AggregateOptions) {
+    return this.model.aggregate(pipeline, options);
   }
 }
