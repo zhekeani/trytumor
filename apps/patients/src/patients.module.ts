@@ -2,20 +2,16 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as Joi from 'joi';
 
-import {
-  DatabaseModule,
-  JwtStrategy,
-  Services,
-  StorageModule,
-} from '@app/common';
+import { DatabaseModule, JwtStrategy, StorageModule } from '@app/common';
+import { EventsModule } from './events/events.module';
 import { PatientDocument, PatientSchema } from './models/patient.schema';
 import { PatientsController } from './patients.controller';
 import { PatientsRepository } from './patients.repository';
 import { PatientsService } from './patients.service';
-import { ClientsModule, Transport } from '@nestjs/microservices';
 
 @Module({
   imports: [
+    EventsModule,
     ConfigModule.forRoot({
       isGlobal: true,
 
@@ -49,30 +45,6 @@ import { ClientsModule, Transport } from '@nestjs/microservices';
         bucketName: configService.get('GOOGLE_STORAGE_BUCKET_NAME'),
       }),
     }),
-    ClientsModule.registerAsync([
-      {
-        name: Services.Doctors,
-        inject: [ConfigService],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: configService.get('DOCTORS_HOST'),
-            port: configService.get('DOCTORS_PORT'),
-          },
-        }),
-      },
-      {
-        name: Services.Predictions,
-        inject: [ConfigService],
-        useFactory: (configService: ConfigService) => ({
-          transport: Transport.TCP,
-          options: {
-            host: configService.get('PREDICTIONS_HOST'),
-            port: configService.get('PREDICTIONS_PORT'),
-          },
-        }),
-      },
-    ]),
   ],
   controllers: [PatientsController],
   providers: [PatientsService, PatientsRepository, JwtStrategy],

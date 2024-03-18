@@ -1,23 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { PatientsRepository } from './patients.repository';
-import { CreatePatientDto } from './dto/create-patient.dto';
-import {
-  PatientsEvents,
-  Services,
-  StorageService,
-  PatientNewToPredictionsDto,
-} from '@app/common';
+import { StorageService } from '@app/common';
+import { Injectable } from '@nestjs/common';
 import { Types } from 'mongoose';
-import { ClientProxy } from '@nestjs/microservices';
+import { CreatePatientDto } from './dto/create-patient.dto';
+import { EventsService } from './events/events.service';
+import { Gender } from './interfaces/gender.interface';
+import { PatientsRepository } from './patients.repository';
 
 @Injectable()
 export class PatientsService {
   constructor(
     private readonly patientsRepository: PatientsRepository,
     private readonly storageService: StorageService,
-    @Inject(Services.Doctors) private readonly doctorsClient: ClientProxy,
-    @Inject(Services.Predictions)
-    private readonly predictionsClient: ClientProxy,
+    private readonly eventsService: EventsService,
   ) {}
 
   private constructPath(patientId: string) {
@@ -70,12 +64,12 @@ export class PatientsService {
     );
 
     // emit patient creation event to Predictions Service
-    this.predictionsClient.emit(PatientsEvents.PatientNew, {
-      id: newPatient._id,
+    this.eventsService.emitPatientNewEvent({
+      id: newPatient._id.toHexString(),
       fullName: newPatient.fullName,
-      gender: newPatient.gender,
+      gender: newPatient.gender as Gender,
       birthDate: newPatient.birthDate,
-    } as unknown as PatientNewToPredictionsDto);
+    });
 
     return newPatient;
   }
@@ -102,12 +96,12 @@ export class PatientsService {
     }
 
     // emit patient update event to Predictions Service
-    this.predictionsClient.emit(PatientsEvents.PatientEdit, {
+    this.eventsService.emitPatientEditEvent({
       id: patientId,
-      fullName: updatedPatient.fullName,
-      gender: updatedPatient.gender,
-      birthDate: updatedPatient.birthDate,
-    } as unknown as Partial<PatientNewToPredictionsDto>);
+      fullName: updatePatientDto.fullName,
+      gender: updatePatientDto.gender as Gender,
+      birthDate: updatePatientDto.birthDate,
+    });
 
     return updatedPatient;
   }

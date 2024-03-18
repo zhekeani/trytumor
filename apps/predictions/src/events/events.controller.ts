@@ -11,13 +11,21 @@ export class EventsController {
 
   // Listen to "patient-new" event
   @EventPattern(PatientsEvents.PatientNew)
-  async newPatient(@Payload() data: PatientNewToPredictionsDto) {
+  async listenToPatientNew(@Payload() data: PatientNewToPredictionsDto) {
     console.log('Accepted data in predictions events route: ', data);
 
-    this.eventsService.handlePatientNewEvent(data);
+    this.eventsService.handlePatientNew(data);
   }
 
   // Listen to "patient-edit" event
+  @EventPattern(PatientsEvents.PatientEdit)
+  async listenToPatientEdit(
+    @Payload() data: Partial<PatientNewToPredictionsDto>,
+  ) {
+    console.log('Accepted data in predictions patient-edit listener', data);
+
+    this.eventsService.handlePatientEdit(data);
+  }
 
   // Listen to "patient-delete" event
 
