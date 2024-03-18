@@ -23,6 +23,6 @@ export class PredictionResult {
   @Prop()
   imageIndex: number;
 
-  @Prop({ type: [Percentage] })
-  percentages: Percentage[];
+  @Prop({ type: Percentage })
+  percentages: Percentage;
 }

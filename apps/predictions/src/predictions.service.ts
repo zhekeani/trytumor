@@ -1,16 +1,11 @@
 import { StorageService, TokenPayloadProperties } from '@app/common';
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import axios from 'axios';
-import { CreatePredictionDto } from './dto/create-prediction-dto';
-import { PredictionDataDto } from './dto/prediction-data.dto';
-import {
-  PercentageDto,
-  PredictionResultDto,
-} from './dto/prediction-result.dto';
-import { PredictionDto } from './dto/prediction.dto';
+import { Types } from 'mongoose';
+import { CreatePredictionDto } from './dto/create-prediction.dto';
+import { PredictionData, PredictionDocument } from './models/prediction.schema';
 import { PredictionsRepository } from './repositories/predictions.repository';
-import { object } from 'joi';
+import { UtilsService } from './utils/utils.service';
 
 @Injectable()
 export class PredictionsService {
@@ -18,6 +13,7 @@ export class PredictionsService {
     private readonly predictionsRepository: PredictionsRepository,
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
+    private readonly utilsService: UtilsService,
   ) {}
 
   async fetchPredictions() {
@@ -30,126 +26,88 @@ export class PredictionsService {
     imageFiles: Express.Multer.File[],
     createPredictionDto: CreatePredictionDto,
   ) {
+    // Check if the patient exist
+    await this.predictionsRepository.findOne({
+      'patientData.id': createPredictionDto.patientId,
+    });
+
+    // Send all of the predictions simultaneously
+    // not one by one blocking each other
     const promises = imageFiles.map(async (imageFile, index) => {
-      return this.sendPrediction(imageFile, index, authToken);
+      return this.utilsService.sendPrediction(imageFile, index, authToken);
     });
 
     const predictionResult = await Promise.all(promises);
 
-    const patientData = await this.fetchPatientData(
-      createPredictionDto.patientId,
-    );
+    // Manually create the predictionData id
+    const predictionDataId = new Types.ObjectId();
 
-    const predictionsData = await this.constructPredictionData(
+    // Construct the predictionsData
+    const predictionData = await this.utilsService.constructPredictionData(
       tokenPayload,
       createPredictionDto,
       predictionResult,
     );
 
-    const newPrediction = {
-      patientData,
-      predictionsData,
-    } as PredictionDto;
-
-    return newPrediction;
+    return this.save(
+      imageFiles,
+      predictionData,
+      createPredictionDto.patientId,
+      predictionDataId.toHexString(),
+    );
   }
 
-  async save() {}
-
-  private async sendPrediction(
-    imageFile: Express.Multer.File,
-    imageIndex: number,
-    authToken: string,
-  ): Promise<Partial<PredictionResultDto>> {
-    const apiUrl = this.configService.get('PREDICTION_URL');
-    const formData = new FormData();
-
-    const blob = new Blob([imageFile.buffer], { type: imageFile.mimetype });
-
-    formData.append('image_file', blob, imageFile.originalname);
-
-    try {
-      const response = await axios.post(apiUrl, formData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-          Authorization: `Bearer ${authToken}`,
-        },
-      });
-
-      const percentages = response.data as unknown as PercentageDto;
-
-      const predictionResult = {
-        imageIndex,
-        percentages,
-      } as Partial<PredictionResultDto>;
-
-      console.log(predictionResult);
-
-      return predictionResult;
-    } catch (error) {
-      console.error(error);
-      throw new InternalServerErrorException(error.message);
-    }
-  }
-
-  private async fetchPatientData(patientId: string) {
-    const patient = await this.predictionsRepository.findOne({
-      'patientData.id': patientId,
-    });
-    return patient.patientData;
-  }
-
-  private async constructPredictionData(
-    tokenPayload: TokenPayloadProperties,
-    createPredictionDto: CreatePredictionDto,
-    predictionResultDto: Partial<PredictionResultDto>[],
+  private async save(
+    imageFiles: Express.Multer.File[],
+    predictionData: PredictionData,
+    patientId: string,
+    predictionDataId: string,
   ) {
-    // Get the prediction number
-    const predictionArray = await this.predictionsRepository.aggregate([
-      { $match: { 'patientData.id': createPredictionDto.patientId } },
-      { $project: { arrayLength: { $size: '$predictionsData' } } },
-    ]);
+    // Create the predictionId manually (used for cloud storage path)
 
-    const predictionNumber =
-      predictionArray[0].length > 0 ? predictionArray[0].length + 1 : 1;
+    const imagesUrlAndIndex = await Promise.all(
+      imageFiles.map(async (imageFile, imageIndex) => {
+        // Construct the cloud storage path
+        const path = this.utilsService.constructPath(
+          patientId,
+          predictionDataId,
+          imageIndex,
+        );
 
-    // Create the prediction Date object
-    const predictionDate = new Date(Date.now());
+        // Upload the file
+        const { publicUrl } = await this.storageService.save(
+          path,
+          imageFile.mimetype,
+          imageFile.buffer,
+          [
+            { patientId: patientId },
+            { predictionId: predictionDataId },
+            { imageIndex: imageIndex.toString() },
+          ],
+        );
 
-    // Sort the prediction by it index
-    predictionResultDto.sort((a, b) => a.imageIndex - b.imageIndex);
+        return { publicUrl, imageIndex };
+      }),
+    );
 
-    // Calculate the percentage results mean
-    const initialAcc = {
-      glioma: 0,
-      meningioma: 0,
-      noTumor: 0,
-      pituitary: 0,
-    };
-    const resultsMean = predictionResultDto.reduce((acc, result) => {
-      Object.keys(initialAcc).forEach((key) => {
-        acc[key] += result.percentages[key];
-      });
-
-      return acc;
-    }, initialAcc);
-
-    Object.keys(resultsMean).forEach((key) => {
-      resultsMean[key] /= predictionResultDto.length;
+    // Set the public url
+    imagesUrlAndIndex.forEach((urlAndIndex) => {
+      const { publicUrl, imageIndex } = urlAndIndex;
+      predictionData.results[imageIndex].imageUrl = publicUrl;
     });
 
-    // Return the PredictionDataDto
-    const predictionData = {
-      number: predictionNumber,
-      userId: tokenPayload.userId,
-      doctorName: tokenPayload.fullName,
-      dateAndTime: predictionDate,
-      results: predictionResultDto,
-      resultsMean,
-      fileName: createPredictionDto.fileName,
-      additionalNotes: createPredictionDto.additionalNotes,
-    } as PredictionDataDto;
+    // save to database
+    return this.predictionsRepository.findOneAndUpdate(
+      { 'patientData.id': new Types.ObjectId(patientId) },
+      {
+        $push: {
+          predictionsData: { ...predictionData, _id: predictionDataId },
+        },
+      },
+    );
+  }
 
-    return predictionData;
+  async delete(_id: string) {
+    return this.predictionsRepository.findOneAndDelete({ _id });
   }
 }

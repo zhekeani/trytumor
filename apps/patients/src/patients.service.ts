@@ -15,7 +15,7 @@ export class PatientsService {
   ) {}
 
   private constructPath(patientId: string) {
-    return `media/${patientId}/profile-picture/profile-pic-${patientId}`;
+    return `media/patients/${patientId}/profile-picture/profile-pic-${patientId}`;
   }
 
   private async saveProfilePicture(

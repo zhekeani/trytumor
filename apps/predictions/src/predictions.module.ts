@@ -11,6 +11,7 @@ import {
   PredictionSchema,
 } from './models/prediction.schema';
 import { PredictionsRepository } from './repositories/predictions.repository';
+import { UtilsService } from './utils/utils.service';
 
 @Module({
   imports: [
@@ -53,6 +54,6 @@ import { PredictionsRepository } from './repositories/predictions.repository';
     }),
   ],
   controllers: [PredictionsController],
-  providers: [PredictionsService, PredictionsRepository, JwtStrategy],
+  providers: [PredictionsService, PredictionsRepository, JwtStrategy, UtilsService],
 })
 export class PredictionsModule {}

@@ -1,7 +1,10 @@
+import { JwtAuthGuard, TokenPayloadProperties } from '@app/common';
 import {
   Body,
   Controller,
+  Delete,
   Get,
+  Param,
   Post,
   Req,
   UploadedFiles,
@@ -9,15 +12,10 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
-import { AuthToken } from './decorators/auth-token.decorator';
-import { CreatePredictionDto } from './dto/create-prediction-dto';
-import { PredictionsService } from './predictions.service';
-import {
-  AuthenticatedUser,
-  JwtAuthGuard,
-  TokenPayloadProperties,
-} from '@app/common';
 import { Request } from 'express';
+import { AuthToken } from './decorators/auth-token.decorator';
+import { CreatePredictionDto } from './dto/create-prediction.dto';
+import { PredictionsService } from './predictions.service';
 
 @Controller('predictions')
 export class PredictionsController {
@@ -28,7 +26,7 @@ export class PredictionsController {
     return this.predictionsService.fetchPredictions();
   }
 
-  @Post()
+  @Post('create')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('files'))
   async createPrediction(
@@ -46,5 +44,10 @@ export class PredictionsController {
       imageFiles,
       createPredictionDto,
     );
+  }
+
+  @Delete(':id')
+  async deletePrediction(@Param('id') id: string) {
+    return this.predictionsService.delete(id);
   }
 }
