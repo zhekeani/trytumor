@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose';
 
-@Schema()
+@Schema({ _id: false })
 export class PredictionThumbnail {
   @Prop()
   id: string;
@@ -18,9 +18,13 @@ export class PredictionThumbnail {
   imageUrl: string;
 }
 
+@Schema({ _id: false })
 export class PredictionsThumbnail {
   @Prop()
   patientId: string;
+
+  @Prop()
+  userId: string;
 
   @Prop({ type: [PredictionThumbnail] })
   predictions: PredictionThumbnail[];

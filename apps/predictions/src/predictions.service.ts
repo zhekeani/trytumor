@@ -3,14 +3,11 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Types } from 'mongoose';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
-import {
-  PatientData,
-  PredictionData,
-  PredictionDocument,
-} from './models/prediction.schema';
+import { EditPredictionDto } from './dto/edit-prediction.dto';
+import { PredictionData } from './models/prediction.schema';
 import { PredictionsRepository } from './repositories/predictions.repository';
 import { UtilsService } from './utils/utils.service';
-import { EditPredictionDto } from './dto/edit-prediction.dto';
+import { EventsService } from './events/events.service';
 
 @Injectable()
 export class PredictionsService {
@@ -19,6 +16,7 @@ export class PredictionsService {
     private readonly configService: ConfigService,
     private readonly storageService: StorageService,
     private readonly utilsService: UtilsService,
+    private readonly eventsService: EventsService,
   ) {}
 
   async create(
@@ -53,7 +51,26 @@ export class PredictionsService {
       patientId,
     );
 
-    return this.save(imageFiles, predictionData, patientId);
+    const savedPrediction = await this.save(
+      imageFiles,
+      predictionData,
+      patientId,
+    );
+
+    // Emit prediction creation event
+    this.eventsService.emitPredictionNewEvent({
+      patientId: savedPrediction.patientData.id,
+      userId: savedPrediction.predictionsData[0].userId,
+      predictionThumbnail: {
+        id: savedPrediction.predictionsData[0].id,
+        fileName: savedPrediction.predictionsData[0].fileName,
+        dataAndTime: savedPrediction.predictionsData[0].dateAndTime,
+        number: savedPrediction.predictionsData[0].number,
+        imageUrl: savedPrediction.predictionsData[0].results[0].imageUrl,
+      },
+    });
+
+    return savedPrediction;
   }
 
   private async save(
@@ -145,7 +162,19 @@ export class PredictionsService {
       },
     );
 
-    return this.fetchByPredictionId(predictionId);
+    const updatedPrediction = await this.fetchByPredictionId(predictionId);
+
+    // Emit prediction update event
+    this.eventsService.emitPredictionEditEvent({
+      patientId: updatedPrediction.patientData.id,
+      userId: updatedPrediction.predictionsData[0].userId,
+      predictionThumbnail: {
+        id: updatedPrediction.predictionsData[0].id,
+        fileName: updatedPrediction.predictionsData[0].fileName,
+      },
+    });
+
+    return updatedPrediction;
   }
 
   // Delete one of the prediction
@@ -169,14 +198,24 @@ export class PredictionsService {
       }),
     );
 
-    return this.predictionsRepository.findOneAndUpdate(
-      { 'predictionsData.id': predictionId },
-      {
-        $pull: {
-          predictionsData: { id: new Types.ObjectId(predictionId) },
+    const updatedPredictions =
+      await this.predictionsRepository.findOneAndUpdate(
+        { 'predictionsData.id': predictionId },
+        {
+          $pull: {
+            predictionsData: { id: new Types.ObjectId(predictionId) },
+          },
         },
-      },
-    );
+      );
+
+    // Emit prediction deletion event
+    this.eventsService.emitPredictionDeleteEvent({
+      patientId: predictionToDelete.patientData.id,
+      userId: predictionToDelete.predictionsData[0].userId,
+      predictionId: predictionToDelete.predictionsData[0].id,
+    });
+
+    return updatedPredictions;
   }
 
   // Delete the whole prediction document

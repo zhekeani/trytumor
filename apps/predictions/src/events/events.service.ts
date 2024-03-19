@@ -1,11 +1,15 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { PredictionsRepository } from '../repositories/predictions.repository';
 import {
   PatientDeleteDto,
   PatientNewToPredictionsDto,
+  PredictionDeleteEventDto,
+  PredictionEditEventDto,
+  PredictionNewEventDto,
+  PredictionsEvents,
   Services,
 } from '@app/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { ClientProxy } from '@nestjs/microservices';
+import { PredictionsRepository } from '../repositories/predictions.repository';
 
 @Injectable()
 export class EventsService {
@@ -15,7 +19,25 @@ export class EventsService {
     @Inject(Services.Doctors) private readonly doctorsClient: ClientProxy,
   ) {}
 
-  async emitPredictionNewEvent() {}
+  async emitPredictionNewEvent(predictionEventDto: PredictionNewEventDto) {
+    this.patientsClient.emit(PredictionsEvents.PredictionsNew, {
+      ...predictionEventDto,
+    });
+  }
+
+  async emitPredictionEditEvent(predictionEventDto: PredictionEditEventDto) {
+    this.patientsClient.emit(PredictionsEvents.PredictionsEdit, {
+      ...predictionEventDto,
+    });
+  }
+
+  async emitPredictionDeleteEvent(
+    predictionEventDto: PredictionDeleteEventDto,
+  ) {
+    this.patientsClient.emit(PredictionsEvents.PredictionsDelete, {
+      ...predictionEventDto,
+    });
+  }
 
   async handlePatientNewEvent(patientNewDto: PatientNewToPredictionsDto) {
     const spotForNewPatient = {
