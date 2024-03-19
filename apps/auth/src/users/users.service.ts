@@ -168,4 +168,10 @@ export class UsersService {
 
     return deletedUser;
   }
+
+  // JUST FOR DEVELOPMENT
+  // DON'T USE IT IN PRODUCTION
+  async deleteAll() {
+    return this.usersRepository.deleteMany({});
+  }
 }

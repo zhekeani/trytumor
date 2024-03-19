@@ -4,11 +4,13 @@ import {
   AggregateOptions,
   FilterQuery,
   Model,
+  MongooseBaseQueryOptionKeys,
   PipelineStage,
   QueryOptions,
   Types,
   UpdateQuery,
 } from 'mongoose';
+import { DeleteOptions } from '@google-cloud/storage/build/cjs/src/nodejs-common/service-object';
 
 // Class that extends this abstract class need to provide
 // generic document type that satisfy AbstractDocument
@@ -96,6 +98,16 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     // Immediately return the result, because it will return null
     // if there's no document to delete
     return this.model.findOneAndDelete(filterQuery).lean<TDocument>(true);
+  }
+
+  async deleteMany(
+    filterQuery: FilterQuery<TDocument>,
+    options?: DeleteOptions &
+      Pick<QueryOptions<TDocument>, MongooseBaseQueryOptionKeys> & {
+        [other: string]: any;
+      },
+  ) {
+    return this.model.deleteMany(filterQuery, options);
   }
 
   async aggregate(pipeline?: PipelineStage[], options?: AggregateOptions) {

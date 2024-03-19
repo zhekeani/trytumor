@@ -14,15 +14,19 @@ export class PatientsService {
     private readonly eventsService: EventsService,
   ) {}
 
-  private constructPath(patientId: string) {
+  private constructProfilePicPath(patientId: string) {
     return `media/patients/${patientId}/profile-picture/profile-pic-${patientId}`;
+  }
+
+  private constructPatientPath(patientId: string) {
+    return `media/patients/${patientId}`;
   }
 
   private async saveProfilePicture(
     patientId: string,
     profilePictureFile: Express.Multer.File,
   ) {
-    const filePath = this.constructPath(patientId);
+    const filePath = this.constructProfilePicPath(patientId);
 
     return this.storageService.save(
       filePath,
@@ -105,7 +109,9 @@ export class PatientsService {
   }
 
   async delete(patientId: string) {
-    await this.storageService.delete(this.constructPath(patientId));
+    await this.storageService.deleteFilesByDirectoryName(
+      this.constructPatientPath(patientId),
+    );
 
     const deletedPatient = this.patientsRepository.findOneAndDelete({
       _id: patientId,
@@ -114,5 +120,11 @@ export class PatientsService {
     this.eventsService.emitPatientDeleteEvent({ id: patientId });
 
     return deletedPatient;
+  }
+
+  // JUST FOR DEVELOPMENT
+  // DON'T USE IT IN PRODUCTION
+  async deleteAll() {
+    return this.patientsRepository.deleteMany({});
   }
 }

@@ -73,6 +73,13 @@ export class PredictionsController {
     return this.predictionsService.deletePredictionDocument(id);
   }
 
+  // JUST FOR DEVELOPMENT
+  // DON'T USE IT IN PRODUCTION
+  @Delete('delete/all')
+  async deleteAll() {
+    return this.predictionsService.deleteAll();
+  }
+
   @Delete('delete/:id')
   async deletePrediction(@Param('id') id: string) {
     return this.predictionsService.delete(id);

@@ -70,6 +70,13 @@ export class PatientsController {
     );
   }
 
+  // JUST FOR DEVELOPMENT
+  // DON'T USE IT IN PRODUCTION
+  @Delete('delete/all')
+  async deleteAll() {
+    return this.patientsService.deleteAll();
+  }
+
   @Delete('delete/:id')
   async deletePatient(@Param('id') patientId: string) {
     return this.patientsService.delete(patientId);

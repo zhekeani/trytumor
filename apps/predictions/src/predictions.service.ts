@@ -223,4 +223,10 @@ export class PredictionsService {
   async deletePredictionDocument(documentId: string) {
     return this.predictionsRepository.findOneAndDelete({ _id: documentId });
   }
+
+  // JUST FOR DEVELOPMENT
+  // DON'T USE IT IN PRODUCTION
+  async deleteAll() {
+    return this.predictionsRepository.deleteMany({});
+  }
 }

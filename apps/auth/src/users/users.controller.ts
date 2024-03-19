@@ -46,6 +46,13 @@ export class UsersController {
     return this.updateUser(updateUserDto, profilePictureFile);
   }
 
+  // JUST FOR DEVELOPMENT
+  // DON'T USE IT IN PRODUCTION
+  @Delete('delete/all')
+  async deleteAll() {
+    return this.usersService.deleteAll();
+  }
+
   @Delete('delete/:id')
   async deleteUser(@Param('id') id: string) {
     return this.usersService.delete(id);

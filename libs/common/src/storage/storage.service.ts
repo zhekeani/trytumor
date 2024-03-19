@@ -88,4 +88,8 @@ export class StorageService {
   async delete(path: string) {
     return this.bucket.file(path).delete({ ignoreNotFound: true });
   }
+
+  async deleteFilesByDirectoryName(path: string) {
+    return this.bucket.deleteFiles({ prefix: path });
+  }
 }
