@@ -4,7 +4,7 @@ import { Types } from 'mongoose';
 import { CreatePatientDto } from './dto/create-patient.dto';
 import { EventsService } from './events/events.service';
 import { Gender } from './interfaces/gender.interface';
-import { PatientsRepository } from './patients.repository';
+import { PatientsRepository } from './repositories/patients.repository';
 
 @Injectable()
 export class PatientsService {

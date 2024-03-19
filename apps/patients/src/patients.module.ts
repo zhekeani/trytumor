@@ -6,7 +6,7 @@ import { DatabaseModule, JwtStrategy, StorageModule } from '@app/common';
 import { EventsModule } from './events/events.module';
 import { PatientDocument, PatientSchema } from './models/patient.schema';
 import { PatientsController } from './patients.controller';
-import { PatientsRepository } from './patients.repository';
+import { PatientsRepository } from './repositories/patients.repository';
 import { PatientsService } from './patients.service';
 
 @Module({

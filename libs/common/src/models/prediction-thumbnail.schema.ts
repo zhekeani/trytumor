@@ -26,6 +26,6 @@ export class PredictionsThumbnail {
   @Prop()
   userId: string;
 
-  @Prop({ type: [PredictionThumbnail] })
-  predictions: PredictionThumbnail[];
+  @Prop({ type: PredictionThumbnail })
+  thumbnail: PredictionThumbnail;
 }
