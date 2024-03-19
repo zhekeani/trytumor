@@ -1,4 +1,5 @@
 import {
+  DoctorEditEventDto,
   PatientDeleteDto,
   PatientNewToPredictionsDto,
   PredictionDeleteEventDto,
@@ -23,10 +24,16 @@ export class EventsService {
     this.patientsClient.emit(PredictionsEvents.PredictionsNew, {
       ...predictionEventDto,
     });
+    this.doctorsClient.emit(PredictionsEvents.PredictionsNew, {
+      ...predictionEventDto,
+    });
   }
 
   async emitPredictionEditEvent(predictionEventDto: PredictionEditEventDto) {
     this.patientsClient.emit(PredictionsEvents.PredictionsEdit, {
+      ...predictionEventDto,
+    });
+    this.doctorsClient.emit(PredictionsEvents.PredictionsEdit, {
       ...predictionEventDto,
     });
   }
@@ -35,6 +42,9 @@ export class EventsService {
     predictionEventDto: PredictionDeleteEventDto,
   ) {
     this.patientsClient.emit(PredictionsEvents.PredictionsDelete, {
+      ...predictionEventDto,
+    });
+    this.doctorsClient.emit(PredictionsEvents.PredictionsDelete, {
       ...predictionEventDto,
     });
   }
@@ -67,4 +77,6 @@ export class EventsService {
       'patientData.id': patientDeleteDto.id,
     });
   }
+
+  async handleDoctorEditEvent(doctorEditDto: DoctorEditEventDto) {}
 }

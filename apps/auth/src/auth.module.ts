@@ -33,6 +33,11 @@ import { EventsModule } from './events/events.module';
         JWT_EXPIRATION: Joi.string().required(),
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_REFRESH_EXPIRATION: Joi.string().required(),
+
+        GOOGLE_STORAGE_PROJECT_ID: Joi.string().required(),
+        GOOGLE_STORAGE_CLIENT_EMAIL: Joi.string().required(),
+        GOOGLE_STORAGE_BUCKET_NAME: Joi.string().required(),
+        GOOGLE_STORAGE_PRIVATE_KEY: Joi.string().required(),
       }),
     }),
     JwtModule.register({}),

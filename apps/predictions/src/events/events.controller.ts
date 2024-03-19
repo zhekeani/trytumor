@@ -2,6 +2,8 @@ import { Controller } from '@nestjs/common';
 import { EventsService } from './events.service';
 import { EventPattern, Payload } from '@nestjs/microservices';
 import {
+  DoctorEditEventDto,
+  DoctorsEvents,
   PatientDeleteDto,
   PatientNewToPredictionsDto,
   PatientsEvents,
@@ -50,4 +52,13 @@ export class EventsController {
   }
 
   // Listen to "doctor-edit" event
+  @EventPattern(DoctorsEvents.DoctorEdit)
+  async listenToDoctorEditEvent(@Payload() doctorEditDto: DoctorEditEventDto) {
+    console.log(
+      'Accepted data in predictions doctor-edit listener',
+      doctorEditDto,
+    );
+
+    this.eventsService.handleDoctorEditEvent(doctorEditDto);
+  }
 }

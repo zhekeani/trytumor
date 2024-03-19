@@ -18,6 +18,9 @@ export class UserDocument extends AbstractDocument {
   password: string;
 
   @Prop()
+  profilePictureUrl?: string;
+
+  @Prop()
   department?: string;
 
   @Prop()

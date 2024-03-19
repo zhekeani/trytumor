@@ -86,13 +86,11 @@ export class PatientsService {
     );
 
     // Check if the patient exist
-    if (updatedPatient) {
-      // Check if the profile picture get updated
-      if (profilePictureFile) {
-        // Doesn't need the return value, the profile picture
-        // url stay the same
-        await this.saveProfilePicture(patientId, profilePictureFile);
-      }
+    // Check if the profile picture get updated
+    if (updatedPatient && profilePictureFile) {
+      // Doesn't need the return value, the profile picture
+      // url stay the same
+      await this.saveProfilePicture(patientId, profilePictureFile);
     }
 
     // emit patient update event to Predictions Service
