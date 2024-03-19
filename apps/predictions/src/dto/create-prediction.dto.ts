@@ -8,14 +8,10 @@ import {
 
 export class CreatePredictionDto {
   @IsString()
-  patientId: string;
-
-  @IsString()
   fileName: string;
 
   @IsArray()
   @ArrayMinSize(0)
   @IsOptional()
-  @ValidateNested({ each: true })
   additionalNotes: string[];
 }

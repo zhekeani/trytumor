@@ -1,6 +1,6 @@
 import { Prop, Schema } from '@nestjs/mongoose';
 
-@Schema()
+@Schema({ _id: false })
 export class Percentage {
   @Prop()
   glioma: number;
@@ -15,7 +15,7 @@ export class Percentage {
   pituitary: number;
 }
 
-@Schema()
+@Schema({ _id: false })
 export class PredictionResult {
   @Prop()
   imageUrl: string;

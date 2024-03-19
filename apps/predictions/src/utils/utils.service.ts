@@ -68,10 +68,12 @@ export class UtilsService {
     tokenPayload: TokenPayloadProperties,
     createPredictionDto: CreatePredictionDto,
     predictionResultDtos: PredictionResultDto[],
+    predictionDataId: string,
+    patientId: string,
   ) {
     // Get the prediction number
     const predictionArray = await this.predictionsRepository.aggregate([
-      { $match: { 'patientData.id': createPredictionDto.patientId } },
+      { $match: { 'patientData.id': patientId } },
       { $project: { arrayLength: { $size: '$predictionsData' } } },
     ]);
 
@@ -124,6 +126,7 @@ export class UtilsService {
 
     // Return the PredictionDataDto
     const predictionData: PredictionData = {
+      id: predictionDataId,
       number: predictionNumber,
       userId: tokenPayload.userId,
       doctorName: tokenPayload.fullName,

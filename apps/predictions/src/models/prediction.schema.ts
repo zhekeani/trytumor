@@ -2,7 +2,7 @@ import { AbstractDocument } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Percentage, PredictionResult } from './prediction-result.schema.ts';
 
-@Schema()
+@Schema({ _id: false })
 export class PatientData {
   @Prop()
   id: string;
@@ -17,8 +17,11 @@ export class PatientData {
   birthDate: Date;
 }
 
-@Schema()
+@Schema({ _id: false })
 export class PredictionData {
+  @Prop()
+  id: string;
+
   @Prop()
   number: number;
 

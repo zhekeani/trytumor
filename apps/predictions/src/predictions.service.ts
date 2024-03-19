@@ -3,9 +3,14 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Types } from 'mongoose';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
-import { PredictionData, PredictionDocument } from './models/prediction.schema';
+import {
+  PatientData,
+  PredictionData,
+  PredictionDocument,
+} from './models/prediction.schema';
 import { PredictionsRepository } from './repositories/predictions.repository';
 import { UtilsService } from './utils/utils.service';
+import { EditPredictionDto } from './dto/edit-prediction.dto';
 
 @Injectable()
 export class PredictionsService {
@@ -16,19 +21,16 @@ export class PredictionsService {
     private readonly utilsService: UtilsService,
   ) {}
 
-  async fetchPredictions() {
-    return this.predictionsRepository.find({});
-  }
-
   async create(
     tokenPayload: TokenPayloadProperties,
     authToken: string,
     imageFiles: Express.Multer.File[],
     createPredictionDto: CreatePredictionDto,
+    patientId: string,
   ) {
     // Check if the patient exist
     await this.predictionsRepository.findOne({
-      'patientData.id': createPredictionDto.patientId,
+      'patientData.id': patientId,
     });
 
     // Send all of the predictions simultaneously
@@ -47,21 +49,17 @@ export class PredictionsService {
       tokenPayload,
       createPredictionDto,
       predictionResult,
+      predictionDataId.toHexString(),
+      patientId,
     );
 
-    return this.save(
-      imageFiles,
-      predictionData,
-      createPredictionDto.patientId,
-      predictionDataId.toHexString(),
-    );
+    return this.save(imageFiles, predictionData, patientId);
   }
 
   private async save(
     imageFiles: Express.Multer.File[],
     predictionData: PredictionData,
     patientId: string,
-    predictionDataId: string,
   ) {
     // Create the predictionId manually (used for cloud storage path)
 
@@ -70,7 +68,7 @@ export class PredictionsService {
         // Construct the cloud storage path
         const path = this.utilsService.constructPath(
           patientId,
-          predictionDataId,
+          predictionData.id,
           imageIndex,
         );
 
@@ -81,7 +79,7 @@ export class PredictionsService {
           imageFile.buffer,
           [
             { patientId: patientId },
-            { predictionId: predictionDataId },
+            { predictionId: predictionData.id },
             { imageIndex: imageIndex.toString() },
           ],
         );
@@ -101,13 +99,89 @@ export class PredictionsService {
       { 'patientData.id': new Types.ObjectId(patientId) },
       {
         $push: {
-          predictionsData: { ...predictionData, _id: predictionDataId },
+          predictionsData: { ...predictionData },
+        },
+      },
+      {
+        projection: {
+          predictionsData: { $slice: -1 },
+          patientData: 1,
         },
       },
     );
   }
 
-  async delete(_id: string) {
-    return this.predictionsRepository.findOneAndDelete({ _id });
+  // Fetch all predictions
+  async fetchAll() {
+    return this.predictionsRepository.find({});
+  }
+
+  // Fetch by patient ID
+  async fetchByPatientId(patientId: string) {
+    return this.predictionsRepository.findOne({ 'patientData.id': patientId });
+  }
+
+  // Fetch by prediction ID
+  async fetchByPredictionId(predictionId: string) {
+    return this.predictionsRepository.findOne(
+      { 'predictionsData.id': predictionId },
+      {
+        predictionsData: { $slice: -1 },
+        patientData: 1,
+      },
+    );
+  }
+
+  // Update one of the prediction
+  async update(predictionId: string, editPredictionDto: EditPredictionDto) {
+    await this.predictionsRepository.findOneAndUpdate(
+      { 'predictionsData.id': predictionId },
+      {
+        $set: {
+          'predictionsData.$.fileName': editPredictionDto.fileName,
+          'predictionsData.$.additionalNotes':
+            editPredictionDto.additionalNotes,
+        },
+      },
+    );
+
+    return this.fetchByPredictionId(predictionId);
+  }
+
+  // Delete one of the prediction
+  async delete(predictionId: string) {
+    // Ensure prediction to delete exist and get the patient id of it
+    const predictionToDelete = await this.fetchByPredictionId(predictionId);
+
+    const imagesPath = predictionToDelete.predictionsData[0].results.map(
+      (result) => {
+        return this.utilsService.constructPath(
+          predictionToDelete.patientData.id,
+          predictionId,
+          result.imageIndex,
+        );
+      },
+    );
+
+    await Promise.all(
+      imagesPath.map(async (imagePath) => {
+        await this.storageService.delete(imagePath);
+      }),
+    );
+
+    return this.predictionsRepository.findOneAndUpdate(
+      { 'predictionsData.id': predictionId },
+      {
+        $pull: {
+          predictionsData: { id: new Types.ObjectId(predictionId) },
+        },
+      },
+    );
+  }
+
+  // Delete the whole prediction document
+  // TEMPORARY DON'T INCLUDE IT IN PRODUCTION!!!!
+  async deletePredictionDocument(documentId: string) {
+    return this.predictionsRepository.findOneAndDelete({ _id: documentId });
   }
 }

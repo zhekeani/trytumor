@@ -5,6 +5,7 @@ import {
   FilterQuery,
   Model,
   PipelineStage,
+  QueryOptions,
   Types,
   UpdateQuery,
 } from 'mongoose';
@@ -33,9 +34,16 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
     return (await createDocument.save()).toJSON() as unknown as TDocument;
   }
 
-  async findOne(filterQuery: FilterQuery<TDocument>): Promise<TDocument> {
+  async findOne(
+    filterQuery: FilterQuery<TDocument>,
+    selectOptions:
+      | string
+      | string[]
+      | Record<string, string | number | boolean | object> = {},
+  ): Promise<TDocument> {
     const document = await this.model
       .findOne(filterQuery)
+      .select(selectOptions)
       // Get the plain json file not hydrated mongoose document
       .lean<TDocument>(true);
 
@@ -50,9 +58,15 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
   async findOneAndUpdate(
     filterQuery: FilterQuery<TDocument>,
     update: UpdateQuery<TDocument>,
+    additionalOptions?: QueryOptions,
   ): Promise<TDocument> {
+    const options: QueryOptions = {
+      new: true,
+      ...additionalOptions,
+    };
+
     const document = this.model
-      .findOneAndUpdate(filterQuery, update, { new: true })
+      .findOneAndUpdate(filterQuery, update, options)
       .lean<TDocument>(true);
 
     if (!document) {

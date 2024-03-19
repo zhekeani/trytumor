@@ -5,6 +5,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Req,
   UploadedFiles,
@@ -16,6 +17,7 @@ import { Request } from 'express';
 import { AuthToken } from './decorators/auth-token.decorator';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
 import { PredictionsService } from './predictions.service';
+import { EditPredictionDto } from './dto/edit-prediction.dto';
 
 @Controller('predictions')
 export class PredictionsController {
@@ -23,10 +25,20 @@ export class PredictionsController {
 
   @Get()
   async getPredictions() {
-    return this.predictionsService.fetchPredictions();
+    return this.predictionsService.fetchAll();
   }
 
-  @Post('create')
+  @Get('patient/:id')
+  async getPredictionsByPatientId(@Param('id') id: string) {
+    return this.predictionsService.fetchByPatientId(id);
+  }
+
+  @Get('prediction/:id')
+  async getPredictionById(@Param('id') id: string) {
+    return this.predictionsService.fetchByPredictionId(id);
+  }
+
+  @Post('patient/create/:id')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('files'))
   async createPrediction(
@@ -34,6 +46,7 @@ export class PredictionsController {
     @UploadedFiles() imageFiles: Express.Multer.File[],
     @Body() createPredictionDto: CreatePredictionDto,
     @Req() request: Request,
+    @Param('id') id: string,
   ) {
     // console.log(imageFiles);
     const tokenPayload = request.user as TokenPayloadProperties;
@@ -43,10 +56,24 @@ export class PredictionsController {
       authToken,
       imageFiles,
       createPredictionDto,
+      id,
     );
   }
 
-  @Delete(':id')
+  @Patch('update/:id')
+  async updatePrediction(
+    @Param('id') id: string,
+    @Body() editPredictionDto: EditPredictionDto,
+  ) {
+    return this.predictionsService.update(id, editPredictionDto);
+  }
+
+  @Delete('delete/document/:id')
+  async deletePredictionDocument(@Param('id') id: string) {
+    return this.predictionsService.deletePredictionDocument(id);
+  }
+
+  @Delete('delete/:id')
   async deletePrediction(@Param('id') id: string) {
     return this.predictionsService.delete(id);
   }
