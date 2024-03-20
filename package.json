@@ -45,7 +45,7 @@
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",
     "@nestjs/schematics": "^10.0.0",
-    "@nestjs/testing": "^10.0.0",
+    "@nestjs/testing": "^10.3.4",
     "@types/axios": "^0.14.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.7",

@@ -2,6 +2,7 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { StorageService } from './storage.service';
 import { StorageModuleConfig } from './interfaces/storage-module-config.interface';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Storage } from '@google-cloud/storage';
 
 @Module({})
 export class StorageModule {
@@ -19,12 +20,22 @@ export class StorageModule {
       providers: [
         StorageService,
         {
-          provide: 'CONFIG',
+          provide: 'BUCKET',
 
           // Take all providers from inject and pass it to the options factory function
           // Use async await to accommodate if the return value is a promise
-          useFactory: async (...args: any[]) =>
-            await options.useFactory(...args),
+          useFactory: async (...args: any[]) => {
+            const config = await options.useFactory(...args);
+            const bucket = new Storage({
+              projectId: config.projectId,
+              credentials: {
+                client_email: config.clientEmail,
+                private_key: config.privateKey,
+              },
+            }).bucket(config.bucketName);
+
+            return bucket;
+          },
 
           // All providers in the inject will be resolved and passed as arguments
           // to factory function

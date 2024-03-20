@@ -1,38 +1,17 @@
-import { Bucket, Storage } from '@google-cloud/storage';
+import { Bucket } from '@google-cloud/storage';
 import {
   Inject,
   Injectable,
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { StorageModuleConfig } from './interfaces/storage-module-config.interface';
-import { error } from 'console';
-import { resolve } from 'path';
 import { StreamOutput } from './interfaces/stream-output.interface';
 
 @Injectable()
 export class StorageService {
   private logger: Logger;
 
-  private storage: Storage;
-  private bucket: Bucket;
-  private bucketName: string;
-
-  constructor(@Inject('CONFIG') storageConfig: StorageModuleConfig) {
-    this.logger = new Logger();
-
-    this.storage = new Storage({
-      projectId: storageConfig.projectId,
-      credentials: {
-        client_email: storageConfig.clientEmail,
-        private_key: storageConfig.privateKey,
-      },
-    });
-
-    this.bucket = this.storage.bucket(storageConfig.bucketName);
-    this.bucketName = storageConfig.bucketName;
-  }
+  constructor(@Inject('BUCKET') private readonly cloudBucket: Bucket) {}
 
   async save(
     path: string,
@@ -49,7 +28,7 @@ export class StorageService {
       );
 
       // Create stream to upload
-      const file = this.bucket.file(path);
+      const file = this.cloudBucket.file(path);
       const stream = file.createWriteStream({
         // Set the default metadata
         metadata: {
@@ -66,30 +45,38 @@ export class StorageService {
         })
         // Listening to finish event
         .on('finish', async () => {
-          await file.setMetadata({
-            metadata: object,
-          });
+          try {
+            await file.setMetadata({
+              metadata: object,
+            });
+            // Make the file publicly accessible
+            await file.makePublic();
 
-          // Make the file publicly accessible
-          await file.makePublic();
+            // Construct the public url
+            const streamOutput = {
+              publicUrl: `https://storage.googleapis.com/${this.cloudBucket.name}/${path}`,
+            };
 
-          // Construct the public url
-          const streamOutput = {
-            publicUrl: `https://storage.googleapis.com/${this.bucketName}/${path}`,
-          };
+            // Resolve the promise
+            resolve(streamOutput);
+          } catch (error) {
+            this.logger.warn(
+              'Error setting metadata or making file public:',
+              error.message,
+            );
 
-          // Resolve the promise
-          resolve(streamOutput);
+            reject(new InternalServerErrorException(error.message));
+          }
         });
       stream.end(media);
     });
   }
 
   async delete(path: string) {
-    return this.bucket.file(path).delete({ ignoreNotFound: true });
+    return this.cloudBucket.file(path).delete({ ignoreNotFound: true });
   }
 
   async deleteFilesByDirectoryName(path: string) {
-    return this.bucket.deleteFiles({ prefix: path });
+    return this.cloudBucket.deleteFiles({ prefix: path });
   }
 }
