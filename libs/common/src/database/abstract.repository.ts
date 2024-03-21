@@ -67,7 +67,7 @@ export abstract class AbstractRepository<TDocument extends AbstractDocument> {
       ...additionalOptions,
     };
 
-    const document = this.model
+    const document = await this.model
       .findOneAndUpdate(filterQuery, update, options)
       .lean<TDocument>(true);
 
