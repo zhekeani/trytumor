@@ -1,8 +1,8 @@
-import { DynamicModule, Module } from '@nestjs/common';
-import { StorageService } from './storage.service';
-import { StorageModuleConfig } from './interfaces/storage-module-config.interface';
-import { ConfigModule, ConfigService } from '@nestjs/config';
 import { Storage } from '@google-cloud/storage';
+import { DynamicModule, Module } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { StorageModuleConfig } from './interfaces/storage-module-config.interface';
+import { StorageService } from './storage.service';
 
 @Module({})
 export class StorageModule {

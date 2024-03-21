@@ -3,13 +3,12 @@ import {
   Inject,
   Injectable,
   InternalServerErrorException,
-  Logger,
 } from '@nestjs/common';
 import { StreamOutput } from './interfaces/stream-output.interface';
 
 @Injectable()
 export class StorageService {
-  private logger: Logger;
+  // private logger: Logger;
 
   constructor(@Inject('BUCKET') private readonly cloudBucket: Bucket) {}
 
@@ -39,7 +38,7 @@ export class StorageService {
       stream
         // Listening to error event
         .on('error', (error) => {
-          this.logger.warn('Stream upload error:', error.message);
+          // this.logger.warn('Stream upload error:', error.message);
 
           reject(new InternalServerErrorException(error.message));
         })
@@ -60,10 +59,10 @@ export class StorageService {
             // Resolve the promise
             resolve(streamOutput);
           } catch (error) {
-            this.logger.warn(
-              'Error setting metadata or making file public:',
-              error.message,
-            );
+            // this.logger.warn(
+            //   'Error setting metadata or making file public:',
+            //   error.message,
+            // );
 
             reject(new InternalServerErrorException(error.message));
           }

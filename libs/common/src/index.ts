@@ -5,3 +5,4 @@ export * from './constants';
 export * from './dto';
 export * from './models';
 export * from './interfaces';
+export * from './utils';
