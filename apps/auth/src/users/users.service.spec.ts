@@ -12,6 +12,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import * as bcrypt from 'bcryptjs';
 import exp from 'constants';
 import { Types } from 'mongoose';
+import { EditUserDto } from './dto/edit-user.dto';
 
 describe('UsersService', () => {
   let service: UsersService;
@@ -216,6 +217,136 @@ describe('UsersService', () => {
       );
 
       expect(result).toEqual(storedUser);
+    });
+  });
+
+  describe('updateUserRefreshToken', () => {
+    const testUserId = new Types.ObjectId();
+    const testRefreshToken = 'test_refresh_token';
+
+    const queryCriteria = { _id: testUserId };
+
+    it('should find specified user and set new refresh token', async () => {
+      const update = {
+        $set: { refreshToken: await bcrypt.hash(testRefreshToken, 10) },
+      };
+
+      const result = await service.updateUserRefreshToken(
+        testUserId,
+        testRefreshToken,
+      );
+
+      expect(result).toEqual(
+        usersRepository.findOneAndUpdate(queryCriteria, update),
+      );
+    });
+  });
+
+  describe('update', () => {
+    const testUserId = 'test_user_id';
+    const testUpdateUserDto: EditUserDto = {};
+    const updatedUser = 'updated_user_doc';
+
+    it('should throw NotFoundException if user to update is not found', async () => {
+      // Mock the user not found scenario
+      usersRepository.findOneAndUpdate = jest.fn().mockImplementation(() => {
+        throw new NotFoundException();
+      });
+
+      await expect(
+        service.update(testUserId, testUpdateUserDto, mockFile),
+      ).rejects.toThrow(NotFoundException);
+    });
+
+    it('should not call saveProfilePicture if profile picture file is not provided', async () => {
+      usersRepository.findOneAndUpdate = jest
+        .fn()
+        .mockResolvedValue(updatedUser);
+
+      service['saveProfilePicture'] = jest.fn().mockResolvedValue(undefined);
+
+      await service.update(testUserId, testUpdateUserDto);
+
+      expect(service['saveProfilePicture']).not.toHaveBeenCalled();
+    });
+
+    it('should call saveProfilePicture if profile picture file is provided', async () => {
+      usersRepository.findOneAndUpdate = jest
+        .fn()
+        .mockResolvedValue(updatedUser);
+
+      service['saveProfilePicture'] = jest.fn().mockResolvedValue(undefined);
+
+      await service.update(testUserId, testUpdateUserDto, mockFile);
+
+      expect(service['saveProfilePicture']).toHaveBeenCalled();
+    });
+
+    it('should not emit event if the fullName property is not provided', async () => {
+      usersRepository.findOneAndUpdate = jest
+        .fn()
+        .mockResolvedValue(updatedUser);
+
+      eventsService.emitDoctorEditEvent = jest
+        .fn()
+        .mockResolvedValue(undefined);
+
+      await service.update(testUserId, testUpdateUserDto);
+
+      expect(eventsService.emitDoctorEditEvent).not.toHaveBeenCalled();
+    });
+
+    it('should emit event if the fullName property is provided', async () => {
+      usersRepository.findOneAndUpdate = jest
+        .fn()
+        .mockResolvedValue(updatedUser);
+
+      eventsService.emitDoctorEditEvent = jest
+        .fn()
+        .mockResolvedValue(undefined);
+
+      testUpdateUserDto.fullName = 'updated_full_name';
+
+      await service.update(testUserId, testUpdateUserDto);
+
+      expect(eventsService.emitDoctorEditEvent).toHaveBeenCalled();
+    });
+
+    it('should return the updated user document if the update success', async () => {
+      const queryCriteria = { _id: testUserId };
+      const update = { $set: { ...testUpdateUserDto } };
+
+      usersRepository.findOneAndUpdate = jest
+        .fn()
+        .mockResolvedValue(updatedUser);
+
+      const result = await service.update(testUserId, testUpdateUserDto);
+
+      expect(usersRepository.findOneAndUpdate).toHaveBeenCalledWith(
+        queryCriteria,
+        update,
+      );
+
+      expect(result).toEqual(updatedUser);
+    });
+  });
+
+  describe('delete', () => {
+    const testUserId = 'test_user_id';
+    const deletedUser = 'deleted_user_doc';
+    it('should delete user file in cloud storage and user document in database', async () => {
+      storageService.delete = jest.fn().mockResolvedValue(undefined);
+      usersRepository.findOneAndDelete = jest
+        .fn()
+        .mockResolvedValue(deletedUser);
+
+      const result = await service.delete(testUserId);
+
+      expect(storageService.delete).toHaveBeenCalled();
+      expect(usersRepository.findOneAndDelete).toHaveBeenCalledWith({
+        _id: testUserId,
+      });
+      expect(result).toEqual(deletedUser);
     });
   });
 });

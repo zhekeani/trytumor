@@ -1,14 +1,14 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import * as request from 'supertest';
-import { PredictionsModule } from './../src/predictions.module';
+import { AuthModule } from './../src/auth.module';
 
-describe('PredictionsController (e2e)', () => {
+describe('AuthController (e2e)', () => {
   let app: INestApplication;
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [PredictionsModule],
+      imports: [AuthModule],
     }).compile();
 
     app = moduleFixture.createNestApplication();
@@ -16,6 +16,9 @@ describe('PredictionsController (e2e)', () => {
   });
 
   it('/ (GET)', () => {
-    return request(app.getHttpServer()).get('/predictions').expect(200);
+    return request(app.getHttpServer())
+      .get('/')
+      .expect(200)
+      .expect('Hello World!');
   });
 });
