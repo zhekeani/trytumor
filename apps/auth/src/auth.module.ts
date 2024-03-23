@@ -19,9 +19,12 @@ import { EventsModule } from './events/events.module';
       // Make ConfigModule globally available in auth app
       // including inside UsersModule
       isGlobal: true,
+      envFilePath: ['.env', 'apps/auth/.env'],
 
       // Check the must provided env
       validationSchema: Joi.object({
+        NODE_ENV: Joi.string().required(),
+
         HTTP_PORT: Joi.number().required(),
         RMQ_PORT: Joi.number().required(),
 
@@ -29,6 +32,8 @@ import { EventsModule } from './events/events.module';
         PREDICTIONS_PORT: Joi.number().required(),
 
         MONGODB_URI: Joi.string().required(),
+        MONGODB_TESTING_URI: Joi.string().required(),
+
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRATION: Joi.string().required(),
         JWT_REFRESH_SECRET: Joi.string().required(),

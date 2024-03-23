@@ -15,6 +15,11 @@ import { RefreshToken } from './decorators/refresh-token-cookie.decorator';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Get()
+  async helloWorld() {
+    return 'Hello World!';
+  }
+
   // Login functionality mainly handled by LocalStrategy & UsersService
   @UseGuards(LocalAuthGuard)
   // @Serialize(UserDto)

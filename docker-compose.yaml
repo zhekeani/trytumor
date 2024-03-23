@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: ./apps/auth/Dockerfile
+      target: development
     # Mount the root directory
     volumes:
       - .:/usr/src/app
@@ -19,6 +20,7 @@ services:
     build:
       context: .
       dockerfile: ./apps/patients/Dockerfile
+      target: development
     volumes:
       - .:/usr/src/app
     command: npm run start:dev patients
@@ -33,6 +35,7 @@ services:
     build:
       context: .
       dockerfile: ./apps/predictions/Dockerfile
+      target: development
     volumes:
       - .:/usr/src/app
     command: npm run start:dev predictions

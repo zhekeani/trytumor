@@ -54,6 +54,10 @@ export class UsersService {
     return `media/doctors/${userId}/profile-picture/profile-pic-${userId}`;
   }
 
+  private constructDoctorsDirPath() {
+    return 'media/doctors';
+  }
+
   private async saveProfilePicture(
     userId: string,
     profilePictureFile: Express.Multer.File,
@@ -172,6 +176,9 @@ export class UsersService {
   // JUST FOR DEVELOPMENT
   // DON'T USE IT IN PRODUCTION
   async deleteAll() {
+    await this.storageService.deleteFilesByDirectoryName(
+      this.constructDoctorsDirPath(),
+    );
     return this.usersRepository.deleteMany({});
   }
 }
