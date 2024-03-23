@@ -74,7 +74,7 @@ describe('AuthController (e2e)', () => {
       expect(body.profilePictureUrl).toBeDefined();
     });
 
-    it('should give Unprocessable Entity (422), if username already exist', async () => {
+    it('should return Unprocessable Entity (422), if username already exist', async () => {
       const form = new FormData();
 
       // Change the email so its different from the previous one
@@ -94,7 +94,7 @@ describe('AuthController (e2e)', () => {
         .expect(422);
     });
 
-    it('should give Unprocessable Entity (422), if email already exist', async () => {
+    it('should return Unprocessable Entity (422), if email already exist', async () => {
       const form = new FormData();
 
       // Change the username so its different from the previous one
@@ -118,9 +118,20 @@ describe('AuthController (e2e)', () => {
   describe('/auth/login (POST)', () => {
     let createUserDto: Partial<CreateUserDto>;
 
-    // beforeAll(async () => {
-    //   await request(app.getHttpServer()).delete('/users/delete/all');
-    // });
+    beforeAll(async () => {
+      await request(app.getHttpServer()).delete('/users/delete/all');
+
+      createUserDto = {
+        email: 'test@test.com',
+        password: 'StrongPassword123!',
+        username: 'user_test',
+        fullName: 'Josh Von Doe',
+      };
+
+      await request(app.getHttpServer())
+        .post('/users/create')
+        .send(createUserDto);
+    });
 
     // beforeEach(() => {
     //   createUserDto = {
@@ -130,5 +141,49 @@ describe('AuthController (e2e)', () => {
     //     fullName: 'Josh Von Doe',
     //   };
     // });
+
+    it('should return Document Not Found (404) if the user is not exists', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: 'wrong_user_test',
+          email: 'wrong_email',
+          password: createUserDto.password,
+        })
+        .expect(404);
+    });
+
+    it('should return Unauthorized (401) if the credentials are not valid', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: createUserDto.username,
+          email: createUserDto.email,
+          password: 'wrong_password',
+        })
+        .expect(401);
+    });
+
+    it('should set access & refresh token to response cookie and update refresh token in database', async () => {
+      const res = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: createUserDto.username,
+          email: createUserDto.email,
+          password: createUserDto.password,
+        })
+        .expect(201);
+
+      const cookies = res.get('Set-Cookie');
+
+      const cookiesName = cookies.map((cookie) => {
+        const [name, value] = cookie.trim().split('=');
+
+        return name;
+      });
+
+      expect(cookiesName).toContain('Authentication');
+      expect(cookiesName).toContain('refresh_token');
+    });
   });
 });
