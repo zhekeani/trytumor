@@ -6,3 +6,4 @@ export * from './dto';
 export * from './models';
 export * from './interfaces';
 export * from './utils';
+export * from './pipes';
