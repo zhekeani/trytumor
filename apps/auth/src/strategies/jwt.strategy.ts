@@ -16,8 +16,19 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Specify where the jwt in the request
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
+          // Accommodate incase the cookie-parser doesn't works
+          const headerCookies = request.headers.cookie;
+          const headerCookiesObj: any = {};
+
+          headerCookies?.split(';').map((cookie) => {
+            const [cookieKey, cookieValue] = cookie.split('=');
+            headerCookiesObj[cookieKey.trim()] = cookieValue;
+          });
+
           // Get the token from the cookie
-          return request?.cookies?.Authentication;
+          return (
+            request?.cookies?.Authentication || headerCookiesObj.Authentication
+          );
         },
       ]),
       // Provide the jwt secret

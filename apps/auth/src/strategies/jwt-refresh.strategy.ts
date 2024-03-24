@@ -19,12 +19,24 @@ export class JwtRefreshStrategy extends PassportStrategy(
       // Specify where the jwt in the request
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
+          // Accommodate incase the cookie-parser doesn't works
+          const headerCookies = request.headers.cookie;
+          const headerCookiesObj: any = {};
+
+          headerCookies?.split(';').map((cookie) => {
+            const [cookieKey, cookieValue] = cookie.split('=');
+            headerCookiesObj[cookieKey.trim()] = cookieValue;
+          });
+
           // Get the token from the cookie
-          return request?.cookies?.refresh_token;
+          return (
+            request?.cookies?.refresh_token || headerCookiesObj.refresh_token
+          );
         },
       ]),
       // Provide the jwt secret
       secretOrKey: configService.get('JWT_REFRESH_SECRET'),
+      algorithms: ['HS256'],
     });
   }
 

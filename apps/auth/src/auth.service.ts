@@ -135,4 +135,8 @@ export class AuthService {
       },
     );
   }
+
+  async revokeRefreshToken(userId: string) {
+    return this.usersService.deleteRefreshToken(userId);
+  }
 }

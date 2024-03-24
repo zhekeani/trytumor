@@ -1,7 +1,17 @@
 import { ExecutionContext, createParamDecorator } from '@nestjs/common';
 
 const getRefreshTokenByContext = (context: ExecutionContext) => {
-  return context.switchToHttp().getRequest().cookies.refresh_token;
+  // Accommodate the cookie-parser doesn't works
+  const request = context.switchToHttp().getRequest();
+  const headerCookies = request.headers.cookie;
+  const headerCookiesObj: any = {};
+
+  headerCookies?.split(';').map((cookie: string) => {
+    const [cookieKey, cookieValue] = cookie.split('=');
+    headerCookiesObj[cookieKey.trim()] = cookieValue;
+  });
+
+  return request.cookies?.refresh_token || headerCookiesObj.refresh_token;
 };
 
 export const RefreshToken = createParamDecorator(

@@ -181,4 +181,11 @@ export class UsersService {
     );
     return this.usersRepository.deleteMany({});
   }
+
+  async deleteRefreshToken(userId: string) {
+    return this.usersRepository.findOneAndUpdate(
+      { _id: userId },
+      { $set: { refreshToken: null } },
+    );
+  }
 }

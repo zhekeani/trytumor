@@ -117,6 +117,7 @@ describe('AuthController (e2e)', () => {
 
   describe('/auth/login (POST)', () => {
     let createUserDto: Partial<CreateUserDto>;
+    let createUserRes: request.Response;
 
     beforeAll(async () => {
       await request(app.getHttpServer()).delete('/users/delete/all');
@@ -128,7 +129,7 @@ describe('AuthController (e2e)', () => {
         fullName: 'Josh Von Doe',
       };
 
-      await request(app.getHttpServer())
+      createUserRes = await request(app.getHttpServer())
         .post('/users/create')
         .send(createUserDto);
     });
@@ -184,6 +185,84 @@ describe('AuthController (e2e)', () => {
 
       expect(cookiesName).toContain('Authentication');
       expect(cookiesName).toContain('refresh_token');
+    });
+  });
+
+  describe('/auth/refresh (POST)', () => {
+    let createUserDto: Partial<CreateUserDto>;
+    let createUserRes: request.Response;
+
+    beforeAll(async () => {
+      await request(app.getHttpServer()).delete('/users/delete/all');
+
+      createUserDto = {
+        email: 'test@test.com',
+        password: 'StrongPassword123!',
+        username: 'user_test',
+        fullName: 'Josh Von Doe',
+      };
+
+      createUserRes = await request(app.getHttpServer())
+        .post('/users/create')
+        .send(createUserDto);
+    });
+
+    it('should refresh the access token if the refresh token is valid', async () => {
+      // Login the user to get the refresh_token cookie
+      const loginRes = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: createUserDto.username,
+          email: createUserDto.email,
+          password: createUserDto.password,
+        })
+        .expect(201);
+
+      const cookies = loginRes.get('Set-Cookie');
+      const cookiesToSend = cookies.map(
+        (cookie: string) => cookie.split(';')[0],
+      );
+
+      const refreshRes = await request(app.getHttpServer())
+        .get('/auth/refresh')
+        .set('Cookie', cookiesToSend[1])
+        .expect(200);
+    });
+
+    it('should return Unauthorized (401) if the refresh token is not valid or not provided', async () => {
+      // Token not valid
+      await request(app.getHttpServer())
+        .get('/auth/refresh')
+        .set('Cookie', `refresh_token=wrong_refresh_token`)
+        .expect(401);
+
+      // Token not provided
+      await request(app.getHttpServer()).get('/auth/refresh').expect(401);
+    });
+
+    it('should return Forbidden Exception (403) if the stored refresh token was revoked', async () => {
+      const loginRes = await request(app.getHttpServer())
+        .post('/auth/login')
+        .send({
+          username: createUserDto.username,
+          email: createUserDto.email,
+          password: createUserDto.password,
+        })
+        .expect(201);
+
+      const cookies = loginRes.get('Set-Cookie');
+      const cookiesToSend = cookies.map(
+        (cookie: string) => cookie.split(';')[0],
+      );
+
+      await request(app.getHttpServer())
+        .patch(`/auth/refresh/revoke/${createUserRes.body._id}`)
+        .expect(200);
+
+      const refreshRes = await request(app.getHttpServer())
+        .get('/auth/refresh')
+        .set('Cookie', cookiesToSend[1])
+        .expect(403);
     });
   });
 });
