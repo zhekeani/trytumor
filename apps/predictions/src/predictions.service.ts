@@ -1,19 +1,17 @@
 import { StorageService, TokenPayloadProperties } from '@app/common';
 import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Types } from 'mongoose';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
 import { EditPredictionDto } from './dto/edit-prediction.dto';
+import { EventsService } from './events/events.service';
 import { PredictionData } from './models/prediction.schema';
 import { PredictionsRepository } from './repositories/predictions.repository';
 import { UtilsService } from './utils/utils.service';
-import { EventsService } from './events/events.service';
 
 @Injectable()
 export class PredictionsService {
   constructor(
     private readonly predictionsRepository: PredictionsRepository,
-    private readonly configService: ConfigService,
     private readonly storageService: StorageService,
     private readonly utilsService: UtilsService,
     private readonly eventsService: EventsService,

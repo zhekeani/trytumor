@@ -82,8 +82,6 @@ export class UtilsService {
         ? predictionArray[0].arrayLength + 1
         : 1;
 
-    console.log(predictionArray);
-
     // Create the prediction Date object
     const predictionDate = new Date(Date.now());
 
