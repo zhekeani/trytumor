@@ -134,15 +134,6 @@ describe('AuthController (e2e)', () => {
         .send(createUserDto);
     });
 
-    // beforeEach(() => {
-    //   createUserDto = {
-    //     email: 'test@test.com',
-    //     password: 'StrongPassword123!',
-    //     username: 'user_test',
-    //     fullName: 'Josh Von Doe',
-    //   };
-    // });
-
     it('should return Document Not Found (404) if the user is not exists', async () => {
       const res = await request(app.getHttpServer())
         .post('/auth/login')
