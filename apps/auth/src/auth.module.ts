@@ -19,6 +19,9 @@ import { EventsModule } from './events/events.module';
       // Make ConfigModule globally available in auth app
       // including inside UsersModule
       isGlobal: true,
+
+      // Accommodate the different root directory when running on
+      // development and testing environment
       envFilePath: ['.env', 'apps/auth/.env'],
 
       // Check the must provided env

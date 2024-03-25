@@ -19,6 +19,10 @@ import { UtilsService } from './utils/utils.service';
     ConfigModule.forRoot({
       isGlobal: true,
 
+      // Accommodate the different root directory when running on
+      // development and testing environment
+      envFilePath: ['.env', 'apps/predictions/.env'],
+
       validationSchema: Joi.object({
         HTTP_PORT: Joi.number().required(),
         RMQ_PORT: Joi.number().required(),
@@ -54,6 +58,11 @@ import { UtilsService } from './utils/utils.service';
     }),
   ],
   controllers: [PredictionsController],
-  providers: [PredictionsService, PredictionsRepository, JwtStrategy, UtilsService],
+  providers: [
+    PredictionsService,
+    PredictionsRepository,
+    JwtStrategy,
+    UtilsService,
+  ],
 })
 export class PredictionsModule {}
