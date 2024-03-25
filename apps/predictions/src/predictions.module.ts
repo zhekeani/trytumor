@@ -63,6 +63,10 @@ import { UtilsService } from './utils/utils.service';
     PredictionsRepository,
     JwtStrategy,
     UtilsService,
+    {
+      provide: 'JWT_TESTING_SECRET',
+      useValue: 'testing_secret',
+    },
   ],
 })
 export class PredictionsModule {}

@@ -23,6 +23,7 @@ import { EditPredictionDto } from './dto/edit-prediction.dto';
 export class PredictionsController {
   constructor(private readonly predictionsService: PredictionsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Get()
   async getPredictions() {
     return this.predictionsService.fetchAll();
