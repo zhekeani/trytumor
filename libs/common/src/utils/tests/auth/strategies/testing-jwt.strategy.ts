@@ -5,7 +5,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { TokenPayload } from '../../../../interfaces';
 
 export class TestingJwtStrategy extends PassportStrategy(Strategy) {
-  constructor(@Inject('JWT_TESTING_SECRET') jwtTestingSecret: string) {
+  constructor(
+    @Inject('JWT_TESTING_SECRET') jwtTestingSecret: string,
+    // configService: ConfigService
+  ) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {

@@ -9,18 +9,18 @@ import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
 import * as request from 'supertest';
 import { PredictionsModule } from '../src/predictions.module';
+import { ConfigService } from '@nestjs/config';
 
 describe('PredictionsController (e2e)', () => {
   let app: INestApplication;
-  const jwtTestingSecret = 'testing_secret';
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
       imports: [
         PredictionsModule,
         TestingAuthModule.forRootAsync({
-          useFactory: () => ({
-            jwtTestingSecret,
+          useFactory: (configService: ConfigService) => ({
+            jwtTestingSecret: configService.get('JWT_TESTING_SECRET'),
             jwtTestingExpiration: 900,
           }),
         }),
@@ -28,8 +28,6 @@ describe('PredictionsController (e2e)', () => {
     })
       .overrideProvider(JwtStrategy)
       .useClass(TestingJwtStrategy)
-      .overrideProvider('JWT_TESTING_SECRET')
-      .useValue(jwtTestingSecret)
       .compile();
 
     app = moduleFixture.createNestApplication();

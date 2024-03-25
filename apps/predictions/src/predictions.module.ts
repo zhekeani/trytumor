@@ -65,7 +65,9 @@ import { UtilsService } from './utils/utils.service';
     UtilsService,
     {
       provide: 'JWT_TESTING_SECRET',
-      useValue: 'testing_secret',
+      useFactory: (configService: ConfigService) =>
+        configService.get('JWT_TESTING_SECRET'),
+      inject: [ConfigService],
     },
   ],
 })
