@@ -225,6 +225,10 @@ export class PredictionsService {
   // JUST FOR DEVELOPMENT
   // DON'T USE IT IN PRODUCTION
   async deleteAll() {
+    await this.storageService.deleteFilesByDirectoryName(
+      this.utilsService.constructPatientDirPath(),
+    );
+
     return this.predictionsRepository.deleteMany({});
   }
 }

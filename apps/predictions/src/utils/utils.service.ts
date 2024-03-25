@@ -141,4 +141,8 @@ export class UtilsService {
   constructPath(patientId: string, predictionId: string, imageIndex: number) {
     return `media/patients/${patientId}/predictions/${predictionId}/prediction-${predictionId}-${imageIndex}`;
   }
+
+  constructPatientDirPath() {
+    return 'media/patients';
+  }
 }
