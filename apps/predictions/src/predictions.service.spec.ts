@@ -1,21 +1,20 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { PredictionsService } from './predictions.service';
-import { PredictionsRepository } from './repositories/predictions.repository';
 import { StorageService, TokenPayloadProperties } from '@app/common';
-import { UtilsService } from './utils/utils.service';
-import { EventsService } from './events/events.service';
 import { NotFoundException } from '@nestjs/common';
+import { Test, TestingModule } from '@nestjs/testing';
 import { Types } from 'mongoose';
 import { CreatePredictionDto } from './dto/create-prediction.dto';
+import { EditPredictionDto } from './dto/edit-prediction.dto';
 import { PredictionResultDto } from './dto/prediction-result.dto';
+import { EventsService } from './events/events.service';
+import { PredictionResult } from './models/prediction-result.schema.ts';
 import {
   PatientData,
   PredictionData,
   PredictionDocument,
 } from './models/prediction.schema';
-import { EditPredictionDto } from './dto/edit-prediction.dto';
-import { Type } from 'class-transformer';
-import { PredictionResult } from './models/prediction-result.schema.ts';
+import { PredictionsService } from './predictions.service';
+import { PredictionsRepository } from './repositories/predictions.repository';
+import { UtilsService } from './utils/utils.service';
 
 describe('PredictionsService', () => {
   let service: PredictionsService;

@@ -20,6 +20,7 @@ import { PredictionsModule } from '../src/predictions.module';
 import { UtilsService } from '../src/utils/utils.service';
 import { TestingEventsModule } from './events/testing-events.module';
 import { TestingUtilsService } from './utils/testing-util.service';
+import { EditPredictionDto } from '../src/dto/edit-prediction.dto';
 
 describe('PredictionsController (e2e)', () => {
   let app: INestApplication;
@@ -71,55 +72,221 @@ describe('PredictionsController (e2e)', () => {
     testAuthToken = res.body.token;
   });
 
-  let testPredictionSpot: PredictionDocument;
-  beforeEach(async () => {
-    await request(app.getHttpServer())
-      .delete('/predictions/delete/all')
-      .expect(200);
+  const mockCreatePredictionDto: CreatePredictionDto = {
+    fileName: 'test_file_name',
+    additionalNotes: ['test_additional_notes'],
+  };
 
-    const mockPatientId = new Types.ObjectId();
-    const mockPatientNewToPredictionDto: PatientNewToPredictionsDto = {
-      id: mockPatientId.toHexString(),
-      fullName: 'test_patient_full_name',
-      gender: 'female',
-      birthDate: new Date(),
-    };
+  const mockFormData = new FormData();
+  Object.keys(mockCreatePredictionDto).forEach((key) => {
+    if (Array.isArray(mockCreatePredictionDto[key])) {
+      mockCreatePredictionDto[key].forEach((item: string) => {
+        mockFormData.append(key, item);
+      });
+    } else {
+      mockFormData.append(key, mockCreatePredictionDto[key]);
+    }
+  });
 
-    const res = await request(app.getHttpServer())
-      .post('/testing/events/new')
-      .send(mockPatientNewToPredictionDto)
-      .expect(201);
+  const mockFileData = fs.readFileSync(
+    `${__dirname}/images/test-create-prediction-image.jpg`,
+  );
+  mockFormData.append(
+    'files',
+    mockFileData,
+    'test-create-prediction-image.jpg',
+  );
 
-    testPredictionSpot = res.body;
+  it('should return "Service is healthy" if the service is healthy', async () => {
+    request(app.getHttpServer())
+      .get('/predictions/health')
+      .expect(200)
+      .expect('Service is healthy');
+  });
+
+  describe('/predictions (GET)', () => {
+    let createPredictionRes: request.Response;
+    let createPredictionResponseDoc: PredictionDocument;
+
+    // Set up for patient prediction spot
+    let testPredictionSpot: PredictionDocument;
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .delete('/predictions/delete/all')
+        .expect(200);
+
+      const mockPatientId = new Types.ObjectId();
+      const mockPatientNewToPredictionDto: PatientNewToPredictionsDto = {
+        id: mockPatientId.toHexString(),
+        fullName: 'test_patient_full_name',
+        gender: 'female',
+        birthDate: new Date(),
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/testing/events/new')
+        .send(mockPatientNewToPredictionDto)
+        .expect(201);
+
+      testPredictionSpot = res.body;
+    });
+
+    beforeAll(async () => {
+      createPredictionRes = await request(app.getHttpServer())
+        .post(
+          `/predictions/patient/create/${testPredictionSpot.patientData.id}`,
+        )
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .set(
+          'Content-Type',
+          `multipart/form-data; boundary=${mockFormData.getBoundary()}`,
+        )
+        .send(mockFormData.getBuffer())
+        .expect(201);
+
+      createPredictionResponseDoc = createPredictionRes.body;
+    });
+
+    describe('/ (GET)', () => {
+      it('should return all predictions from all patients', async () => {
+        const res = await request(app.getHttpServer())
+          .get('/predictions')
+          .expect(200);
+
+        expect(res.body[0].patientData).toEqual(
+          createPredictionRes.body.patientData,
+        );
+        expect(res.body[0].predictionsData).toEqual(
+          createPredictionRes.body.predictionsData,
+        );
+      });
+    });
+
+    describe('/patient/:id', () => {
+      it('should return Bad Request Exception (400) if the provided patient ID is not valid MongoDB Object ID', async () => {
+        await request(app.getHttpServer())
+          .get(`/predictions/patient/invalid_id`)
+          .expect(400);
+      });
+
+      it('should return Not Found Exception (404) if prediction document with specified patient ID was not found', async () => {
+        const wrongPatientId = new Types.ObjectId();
+        await request(app.getHttpServer())
+          .get(`/predictions/patient/${wrongPatientId.toHexString()}`)
+          .expect(404);
+      });
+
+      it('should return all predictions from specific patient with specified patient ID', async () => {
+        const res = await request(app.getHttpServer())
+          .get(`/predictions/patient/${testPredictionSpot.patientData.id}`)
+          .expect(200);
+
+        expect(res.body.patientData).toEqual(
+          createPredictionRes.body.patientData,
+        );
+        expect(res.body.predictionsData).toEqual(
+          createPredictionRes.body.predictionsData,
+        );
+      });
+    });
+
+    describe('/prediction/:id', () => {
+      it('should return Bad Request Exception (400) if the provided patient ID is not valid MongoDB Object ID', async () => {
+        await request(app.getHttpServer())
+          .get(`/predictions/prediction/invalid_id`)
+          .expect(400);
+      });
+
+      it('should return Not Found Exception (404) if prediction document with specified patient ID was not found', async () => {
+        const wrongPredictionId = new Types.ObjectId();
+        await request(app.getHttpServer())
+          .get(`/predictions/prediction/${wrongPredictionId.toHexString()}`)
+          .expect(404);
+      });
+
+      it('should return all predictions from specific patient with specified patient ID', async () => {
+        const res = await request(app.getHttpServer())
+          .get(
+            `/predictions/prediction/${createPredictionResponseDoc.predictionsData[0].id}`,
+          )
+          .expect(200);
+
+        expect(res.body.patientData).toEqual(
+          createPredictionRes.body.patientData,
+        );
+        expect(res.body.predictionsData[0]).toEqual(
+          createPredictionRes.body.predictionsData[0],
+        );
+      });
+    });
   });
 
   describe('/predictions/create/:id (POST)', () => {
-    const mockCreatePredictionDto: CreatePredictionDto = {
-      fileName: 'test_file_name',
-      additionalNotes: ['test_additional_notes'],
-    };
+    // Set up for patient prediction spot
+    let testPredictionSpot: PredictionDocument;
 
-    const mockFormData = new FormData();
-    Object.keys(mockCreatePredictionDto).forEach((key) => {
-      if (Array.isArray(mockCreatePredictionDto[key])) {
-        mockCreatePredictionDto[key].forEach((item) => {
-          mockFormData.append(key, item);
-        });
-      } else {
-        mockFormData.append(key, mockCreatePredictionDto[key]);
-      }
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .delete('/predictions/delete/all')
+        .expect(200);
+
+      const mockPatientId = new Types.ObjectId();
+      const mockPatientNewToPredictionDto: PatientNewToPredictionsDto = {
+        id: mockPatientId.toHexString(),
+        fullName: 'test_patient_full_name',
+        gender: 'female',
+        birthDate: new Date(),
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/testing/events/new')
+        .send(mockPatientNewToPredictionDto)
+        .expect(201);
+
+      testPredictionSpot = res.body;
     });
 
-    const mockFileData = fs.readFileSync(
-      `${__dirname}/images/test-create-prediction-image.jpg`,
-    );
-    mockFormData.append(
-      'files',
-      mockFileData,
-      'test-create-prediction-image.jpg',
-    );
-
     it('should return Unauthorized (401) if the access token is not provided or not valid', async () => {
+      await request(app.getHttpServer())
+        .post(
+          `/predictions/patient/create/${testPredictionSpot.patientData.id}`,
+        )
+        .set('Cookie', `Authentication=invalid_token`)
+        .set(
+          'Content-Type',
+          `multipart/form-data; boundary=${mockFormData.getBoundary()}`,
+        )
+        .send(mockFormData.getBuffer())
+        .expect(401);
+    });
+
+    it('should return Bad Request Exception (400) if the provided patient ID is not valid Mongo Object ID', async () => {
+      await request(app.getHttpServer())
+        .post(`/predictions/patient/create/invalid_id`)
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .set(
+          'Content-Type',
+          `multipart/form-data; boundary=${mockFormData.getBoundary()}`,
+        )
+        .send(mockFormData.getBuffer())
+        .expect(400);
+    });
+
+    it('should return Not Found Exception (404) if prediction document with specified patient ID was not found', async () => {
+      const wrongPatientID = new Types.ObjectId();
+
+      await request(app.getHttpServer())
+        .post(`/predictions/patient/create/${wrongPatientID.toHexString()}`)
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .set(
+          'Content-Type',
+          `multipart/form-data; boundary=${mockFormData.getBoundary()}`,
+        )
+        .send(mockFormData.getBuffer())
+        .expect(404);
+    });
+
+    it('should create prediction and save the image to cloud storage and data to database (200) if the process was successful', async () => {
       const res = await request(app.getHttpServer())
         .post(
           `/predictions/patient/create/${testPredictionSpot.patientData.id}`,
@@ -131,25 +298,180 @@ describe('PredictionsController (e2e)', () => {
         )
         .send(mockFormData.getBuffer())
         .expect(201);
+
+      expect(res.body.patientData).toEqual(testPredictionSpot.patientData);
     });
   });
 
-  describe('/predictions (GET)', () => {
-    describe('/ (GET)', () => {
-      it('should return all predictions from all patients', async () => {
-        const res = await request(app.getHttpServer())
-          .get('/predictions')
-          .set('Cookie', `Authentication=${testAuthToken}`)
-          .expect(200);
+  describe('/predictions/update/:id (PATCH)', () => {
+    let testPredictionSpot: PredictionDocument;
+    let createPredictionResponseDoc: PredictionDocument;
 
-        expect(res.body[0]).toEqual(testPredictionSpot);
-      });
+    const mockEditPredictionDto: EditPredictionDto = {
+      fileName: 'updated_file_name',
+      additionalNotes: ['updated_additional_notes'],
+    };
+
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .delete('/predictions/delete/all')
+        .expect(200);
+
+      const mockPatientId = new Types.ObjectId();
+      const mockPatientNewToPredictionDto: PatientNewToPredictionsDto = {
+        id: mockPatientId.toHexString(),
+        fullName: 'test_patient_full_name',
+        gender: 'female',
+        birthDate: new Date(),
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/testing/events/new')
+        .send(mockPatientNewToPredictionDto)
+        .expect(201);
+
+      testPredictionSpot = res.body;
     });
 
-    // describe('/patient/:id', () => {
-    //   it('should return all predictions from specific patient with specified patient ID', async () => {
+    beforeAll(async () => {
+      const createPredictionRes = await request(app.getHttpServer())
+        .post(
+          `/predictions/patient/create/${testPredictionSpot.patientData.id}`,
+        )
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .set(
+          'Content-Type',
+          `multipart/form-data; boundary=${mockFormData.getBoundary()}`,
+        )
+        .send(mockFormData.getBuffer())
+        .expect(201);
 
-    //   })
-    // })
+      createPredictionResponseDoc = createPredictionRes.body;
+    });
+
+    it('should return Unauthorized (401) if the access token is not provided or not valid', async () => {
+      await request(app.getHttpServer())
+        .patch(`/predictions/update/${testPredictionSpot.patientData.id}`)
+        .set('Cookie', `Authentication=invalid_token`)
+        .send(mockEditPredictionDto)
+        .expect(401);
+    });
+
+    it('should return Bad Request Exception (400) if the provided prediction ID is not valid Mongo Object ID', async () => {
+      await request(app.getHttpServer())
+        .patch(`/predictions/update/invalid_id`)
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .send(mockEditPredictionDto)
+        .expect(400);
+    });
+
+    it('should return Not Found Exception (404) if prediction document with specified prediction ID was not found', async () => {
+      const wrongPredictionId = new Types.ObjectId();
+
+      await request(app.getHttpServer())
+        .patch(`/predictions/update/${wrongPredictionId.toHexString()}`)
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .send(mockEditPredictionDto)
+        .expect(404);
+    });
+
+    it('should update the prediction data if the process was successful', async () => {
+      const res = await request(app.getHttpServer())
+        .patch(
+          `/predictions/update/${createPredictionResponseDoc.predictionsData[0].id}`,
+        )
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .send(mockEditPredictionDto)
+        .expect(200);
+
+      const responsePredictionDoc = res.body as PredictionDocument;
+
+      expect(responsePredictionDoc.patientData).toEqual(
+        createPredictionResponseDoc.patientData,
+      );
+      expect(responsePredictionDoc.predictionsData[0].fileName).toEqual(
+        mockEditPredictionDto.fileName,
+      );
+      expect(responsePredictionDoc.predictionsData[0].additionalNotes).toEqual(
+        mockEditPredictionDto.additionalNotes,
+      );
+    });
+  });
+
+  describe('/predictions/delete/:id (DELETE)', () => {
+    let testPredictionSpot: PredictionDocument;
+    let createPredictionResponseDoc: PredictionDocument;
+
+    beforeAll(async () => {
+      await request(app.getHttpServer())
+        .delete('/predictions/delete/all')
+        .expect(200);
+
+      const mockPatientId = new Types.ObjectId();
+      const mockPatientNewToPredictionDto: PatientNewToPredictionsDto = {
+        id: mockPatientId.toHexString(),
+        fullName: 'test_patient_full_name',
+        gender: 'female',
+        birthDate: new Date(),
+      };
+
+      const res = await request(app.getHttpServer())
+        .post('/testing/events/new')
+        .send(mockPatientNewToPredictionDto)
+        .expect(201);
+
+      testPredictionSpot = res.body;
+    });
+
+    beforeAll(async () => {
+      const createPredictionRes = await request(app.getHttpServer())
+        .post(
+          `/predictions/patient/create/${testPredictionSpot.patientData.id}`,
+        )
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .set(
+          'Content-Type',
+          `multipart/form-data; boundary=${mockFormData.getBoundary()}`,
+        )
+        .send(mockFormData.getBuffer())
+        .expect(201);
+
+      createPredictionResponseDoc = createPredictionRes.body;
+    });
+
+    it('should return Unauthorized (401) if the access token is not provided or not valid', async () => {
+      await request(app.getHttpServer())
+        .delete(`/predictions/delete/${testPredictionSpot.patientData.id}`)
+        .set('Cookie', `Authentication=invalid_token`)
+        .expect(401);
+    });
+
+    it('should return Bad Request Exception (400) if the provided prediction ID is not valid Mongo Object ID', async () => {
+      await request(app.getHttpServer())
+        .delete(`/predictions/delete/invalid_id`)
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .expect(400);
+    });
+
+    it('should return Not Found Exception (404) if prediction document with specified prediction ID was not found', async () => {
+      const wrongPredictionId = new Types.ObjectId();
+
+      await request(app.getHttpServer())
+        .delete(`/predictions/delete/${wrongPredictionId.toHexString()}`)
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .expect(404);
+    });
+
+    it('should return the deleted prediction document if the process was successful', async () => {
+      const res = await request(app.getHttpServer())
+        .delete(
+          `/predictions/delete/${createPredictionResponseDoc.predictionsData[0].id}`,
+        )
+        .set('Cookie', `Authentication=${testAuthToken}`)
+        .expect(200);
+
+      const responsePredictionDoc = res.body as PredictionDocument;
+      expect(responsePredictionDoc.predictionsData.length).toEqual(0);
+    });
   });
 });

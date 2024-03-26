@@ -1,4 +1,8 @@
-import { JwtAuthGuard, TokenPayloadProperties } from '@app/common';
+import {
+  JwtAuthGuard,
+  TokenPayloadProperties,
+  ValidateObjectId,
+} from '@app/common';
 import {
   Body,
   Controller,
@@ -23,18 +27,22 @@ import { EditPredictionDto } from './dto/edit-prediction.dto';
 export class PredictionsController {
   constructor(private readonly predictionsService: PredictionsService) {}
 
+  @Get('health')
+  async healthCheck() {
+    return 'Service is healthy';
+  }
   @Get()
   async getPredictions() {
     return this.predictionsService.fetchAll();
   }
 
   @Get('patient/:id')
-  async getPredictionsByPatientId(@Param('id') id: string) {
+  async getPredictionsByPatientId(@Param('id', ValidateObjectId) id: string) {
     return this.predictionsService.fetchByPatientId(id);
   }
 
   @Get('prediction/:id')
-  async getPredictionById(@Param('id') id: string) {
+  async getPredictionById(@Param('id', ValidateObjectId) id: string) {
     return this.predictionsService.fetchByPredictionId(id);
   }
 
@@ -46,7 +54,7 @@ export class PredictionsController {
     @UploadedFiles() imageFiles: Express.Multer.File[],
     @Body() createPredictionDto: CreatePredictionDto,
     @Req() request: Request,
-    @Param('id') id: string,
+    @Param('id', ValidateObjectId) id: string,
   ) {
     // console.log(imageFiles);
     const tokenPayload = request.user as TokenPayloadProperties;
@@ -63,7 +71,7 @@ export class PredictionsController {
   @Patch('update/:id')
   @UseGuards(JwtAuthGuard)
   async updatePrediction(
-    @Param('id') id: string,
+    @Param('id', ValidateObjectId) id: string,
     @Body() editPredictionDto: EditPredictionDto,
   ) {
     return this.predictionsService.update(id, editPredictionDto);
@@ -71,7 +79,7 @@ export class PredictionsController {
 
   @Delete('delete/document/:id')
   @UseGuards(JwtAuthGuard)
-  async deletePredictionDocument(@Param('id') id: string) {
+  async deletePredictionDocument(@Param('id', ValidateObjectId) id: string) {
     return this.predictionsService.deletePredictionDocument(id);
   }
 
@@ -84,7 +92,7 @@ export class PredictionsController {
 
   @Delete('delete/:id')
   @UseGuards(JwtAuthGuard)
-  async deletePrediction(@Param('id') id: string) {
+  async deletePrediction(@Param('id', ValidateObjectId) id: string) {
     return this.predictionsService.delete(id);
   }
 }
