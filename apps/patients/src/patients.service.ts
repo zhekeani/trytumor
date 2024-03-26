@@ -81,7 +81,7 @@ export class PatientsService {
   async update(
     patientId: string,
     updatePatientDto: Partial<CreatePatientDto>,
-    profilePictureFile: Express.Multer.File,
+    profilePictureFile?: Express.Multer.File,
   ) {
     // Update the database first to make sure patient to update exist
     const updatedPatient = await this.patientsRepository.findOneAndUpdate(
