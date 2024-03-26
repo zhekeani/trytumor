@@ -23,7 +23,6 @@ import { EditPredictionDto } from './dto/edit-prediction.dto';
 export class PredictionsController {
   constructor(private readonly predictionsService: PredictionsService) {}
 
-  @UseGuards(JwtAuthGuard)
   @Get()
   async getPredictions() {
     return this.predictionsService.fetchAll();
@@ -62,6 +61,7 @@ export class PredictionsController {
   }
 
   @Patch('update/:id')
+  @UseGuards(JwtAuthGuard)
   async updatePrediction(
     @Param('id') id: string,
     @Body() editPredictionDto: EditPredictionDto,
@@ -70,6 +70,7 @@ export class PredictionsController {
   }
 
   @Delete('delete/document/:id')
+  @UseGuards(JwtAuthGuard)
   async deletePredictionDocument(@Param('id') id: string) {
     return this.predictionsService.deletePredictionDocument(id);
   }
@@ -82,6 +83,7 @@ export class PredictionsController {
   }
 
   @Delete('delete/:id')
+  @UseGuards(JwtAuthGuard)
   async deletePrediction(@Param('id') id: string) {
     return this.predictionsService.delete(id);
   }
