@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UsersService } from '../users/users.service';
 import { Request } from 'express';
-import { TokenPayload } from '../interfaces/token-payload.interface';
+import { TokenPayload } from '@app/common';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
@@ -16,12 +16,24 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       // Specify where the jwt in the request
       jwtFromRequest: ExtractJwt.fromExtractors([
         (request: Request) => {
+          // Accommodate incase the cookie-parser doesn't works
+          const headerCookies = request.headers.cookie;
+          const headerCookiesObj: any = {};
+
+          headerCookies?.split(';').map((cookie) => {
+            const [cookieKey, cookieValue] = cookie.split('=');
+            headerCookiesObj[cookieKey.trim()] = cookieValue;
+          });
+
           // Get the token from the cookie
-          return request?.cookies?.Authentication;
+          return (
+            request?.cookies?.Authentication || headerCookiesObj.Authentication
+          );
         },
       ]),
       // Provide the jwt secret
       secretOrKey: configService.get('JWT_SECRET'),
+      algorithms: ['HS256'],
     });
   }
 

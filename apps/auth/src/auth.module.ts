@@ -10,6 +10,7 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { UsernameEmailStringify } from './middlewares/username-email-stringify.middleware';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -19,26 +20,36 @@ import { JwtRefreshStrategy } from './strategies/jwt-refresh.strategy';
       // including inside UsersModule
       isGlobal: true,
 
+      // Accommodate the different root directory when running on
+      // development and testing environment
+      envFilePath: ['.env', 'apps/auth/.env'],
+
       // Check the must provided env
       validationSchema: Joi.object({
-        PORT: Joi.number().required(),
+        NODE_ENV: Joi.string().required(),
+
+        HTTP_PORT: Joi.number().required(),
+        RMQ_PORT: Joi.number().required(),
+
+        PREDICTIONS_HOST: Joi.string().required(),
+        PREDICTIONS_PORT: Joi.number().required(),
+
         MONGODB_URI: Joi.string().required(),
+        MONGODB_TESTING_URI: Joi.string().required(),
+
         JWT_SECRET: Joi.string().required(),
         JWT_EXPIRATION: Joi.string().required(),
         JWT_REFRESH_SECRET: Joi.string().required(),
         JWT_REFRESH_EXPIRATION: Joi.string().required(),
+
+        GOOGLE_STORAGE_PROJECT_ID: Joi.string().required(),
+        GOOGLE_STORAGE_CLIENT_EMAIL: Joi.string().required(),
+        GOOGLE_STORAGE_BUCKET_NAME: Joi.string().required(),
+        GOOGLE_STORAGE_PRIVATE_KEY: Joi.string().required(),
       }),
     }),
     JwtModule.register({}),
-    // JwtModule.registerAsync({
-    //   inject: [ConfigService],
-    //   useFactory: (configService: ConfigService) => ({
-    //     secret: configService.get<string>('JWT_SECRET'),
-    //     signOptions: {
-    //       expiresIn: `${configService.get('JWT_EXPIRATION')}s`,
-    //     },
-    //   }),
-    // }),
+    EventsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy, JwtStrategy, JwtRefreshStrategy],

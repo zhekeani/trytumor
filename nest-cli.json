@@ -43,6 +43,15 @@
       "compilerOptions": {
         "tsConfigPath": "apps/patients/tsconfig.app.json"
       }
+    },
+    "predictions": {
+      "type": "application",
+      "root": "apps/predictions",
+      "entryFile": "main",
+      "sourceRoot": "apps/predictions/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/predictions/tsconfig.app.json"
+      }
     }
   },
   "monorepo": true,

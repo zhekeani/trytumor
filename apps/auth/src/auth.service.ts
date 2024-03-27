@@ -5,9 +5,8 @@ import * as bcrypt from 'bcryptjs';
 
 import { UserDocument } from './users/models/user.schema';
 import { CookieOptions, Response } from 'express';
-import { TokenPayload } from './interfaces/token-payload.interface';
+import { TokenPayload, TokenPayloadProperties } from '@app/common';
 import { UsersService } from './users/users.service';
-import { TokenPayloadProperties } from './interfaces/token-payload-properties.interface';
 
 @Injectable()
 export class AuthService {
@@ -23,6 +22,7 @@ export class AuthService {
     const tokenPayload: TokenPayloadProperties = {
       userId: user._id.toHexString(),
       username: user.username,
+      fullName: user.fullName,
     };
 
     const tokens = await Promise.all([
@@ -33,13 +33,15 @@ export class AuthService {
         {
           secret: this.configService.get('JWT_SECRET'),
           expiresIn: `${this.configService.get('JWT_EXPIRATION')}s`,
+          algorithm: 'HS256',
         },
       ),
       this.jwtService.signAsync(
         { tokenPayload },
         {
           secret: this.configService.get('JWT_REFRESH_SECRET'),
-          expiresIn: `${this.configService.get('JWT_REFRESH_EXPIRATION')}`,
+          expiresIn: `${this.configService.get('JWT_REFRESH_EXPIRATION')}s`,
+          algorithm: 'HS256',
         },
       ),
     ]);
@@ -132,5 +134,9 @@ export class AuthService {
         httpOnly: true,
       },
     );
+  }
+
+  async revokeRefreshToken(userId: string) {
+    return this.usersService.deleteRefreshToken(userId);
   }
 }

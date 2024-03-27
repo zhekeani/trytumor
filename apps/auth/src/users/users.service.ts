@@ -10,10 +10,17 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { GetUserDto } from './dto/get-user.dto';
 import { UserDocument } from './models/user.schema';
 import { UsersRepository } from './users.repository';
+import { StorageService } from '@app/common';
+import { EditUserDto } from './dto/edit-user.dto';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class UsersService {
-  constructor(private readonly usersRepository: UsersRepository) {}
+  constructor(
+    private readonly usersRepository: UsersRepository,
+    private readonly storageService: StorageService,
+    private readonly eventsService: EventsService,
+  ) {}
 
   // Validate whether email or username is already used
   private async validateCreateUserDto(createUserDto: CreateUserDto) {
@@ -43,13 +50,55 @@ export class UsersService {
     throw new UnprocessableEntityException(exceptionMessage);
   }
 
-  async create(createUserDto: CreateUserDto) {
+  private constructPath(userId: string) {
+    return `media/doctors/${userId}/profile-picture/profile-pic-${userId}`;
+  }
+
+  private constructDoctorsDirPath() {
+    return 'media/doctors';
+  }
+
+  private async saveProfilePicture(
+    userId: string,
+    profilePictureFile: Express.Multer.File,
+  ) {
+    const filePath = this.constructPath(userId);
+
+    return this.storageService.save(
+      filePath,
+      profilePictureFile.mimetype,
+      profilePictureFile.buffer,
+      [{ userId }],
+    );
+  }
+
+  async create(
+    createUserDto: CreateUserDto,
+    profilePictureFile?: Express.Multer.File,
+  ) {
     await this.validateCreateUserDto(createUserDto);
 
-    return this.usersRepository.create({
-      ...createUserDto,
-      password: await bcrypt.hash(createUserDto.password, 10),
-    });
+    // Create the userId manually
+    const userId = new Types.ObjectId();
+
+    // Check if the profile picture is provided
+    let profilePictureUrl: string;
+    if (profilePictureFile) {
+      const { publicUrl } = await this.saveProfilePicture(
+        userId.toHexString(),
+        profilePictureFile,
+      );
+      profilePictureUrl = publicUrl;
+    }
+
+    return this.usersRepository.create(
+      {
+        ...createUserDto,
+        profilePictureUrl,
+        password: await bcrypt.hash(createUserDto.password, 10),
+      },
+      userId,
+    );
   }
 
   // Used in local strategy AuthGuard
@@ -80,6 +129,63 @@ export class UsersService {
     return this.usersRepository.findOneAndUpdate(
       { _id },
       { $set: { refreshToken: await bcrypt.hash(refreshToken, 10) } },
+    );
+  }
+
+  async fetchAll() {
+    return this.usersRepository.find({});
+  }
+
+  async fetchById(userId: string) {
+    return this.usersRepository.findOne({ _id: userId });
+  }
+
+  async update(
+    userId: string,
+    updateUserDto: EditUserDto,
+    profilePictureFile?: Express.Multer.File,
+  ) {
+    const updatedUser = await this.usersRepository.findOneAndUpdate(
+      { _id: userId },
+      { $set: { ...updateUserDto } },
+    );
+
+    if (updatedUser && profilePictureFile) {
+      await this.saveProfilePicture(userId, profilePictureFile);
+    }
+
+    // Only emit the doctor-edit event if the fullName property changes
+    if (updateUserDto && updateUserDto.fullName) {
+      this.eventsService.emitDoctorEditEvent({
+        userId: userId,
+        fullName: updateUserDto.fullName,
+      });
+    }
+
+    return updatedUser;
+  }
+
+  async delete(userId: string) {
+    await this.storageService.delete(this.constructPath(userId));
+
+    const deletedUser = this.usersRepository.findOneAndDelete({ _id: userId });
+
+    return deletedUser;
+  }
+
+  // JUST FOR DEVELOPMENT
+  // DON'T USE IT IN PRODUCTION
+  async deleteAll() {
+    await this.storageService.deleteFilesByDirectoryName(
+      this.constructDoctorsDirPath(),
+    );
+    return this.usersRepository.deleteMany({});
+  }
+
+  async deleteRefreshToken(userId: string) {
+    return this.usersRepository.findOneAndUpdate(
+      { _id: userId },
+      { $set: { refreshToken: null } },
     );
   }
 }

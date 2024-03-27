@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { AbstractDocument } from '@app/common';
+import { AbstractDocument, PredictionsThumbnail } from '@app/common';
 
 // Create the UserDocument
 // UserDocument used in the typescript
@@ -12,7 +12,13 @@ export class UserDocument extends AbstractDocument {
   username: string;
 
   @Prop()
+  fullName: string;
+
+  @Prop()
   password: string;
+
+  @Prop()
+  profilePictureUrl?: string;
 
   @Prop()
   department?: string;
@@ -25,6 +31,9 @@ export class UserDocument extends AbstractDocument {
 
   @Prop()
   refreshToken?: string;
+
+  @Prop({ type: [PredictionsThumbnail] })
+  predictions?: PredictionsThumbnail[];
 }
 
 // UserSchema used by Mongoose to create Model

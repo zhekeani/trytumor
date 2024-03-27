@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Res, UseGuards } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Res,
+  UseGuards,
+} from '@nestjs/common';
 import { plainToClass } from 'class-transformer';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
@@ -14,6 +22,11 @@ import { RefreshToken } from './decorators/refresh-token-cookie.decorator';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
+  @Get()
+  async helloWorld() {
+    return 'Hello World!';
+  }
 
   // Login functionality mainly handled by LocalStrategy & UsersService
   @UseGuards(LocalAuthGuard)
@@ -54,5 +67,10 @@ export class AuthController {
     response.send(
       plainToClass(UserDto, user, { excludeExtraneousValues: true }),
     );
+  }
+
+  @Patch('refresh/revoke/:id')
+  async revokeRefreshToken(@Param('id') id: string) {
+    return this.authService.revokeRefreshToken(id);
   }
 }
