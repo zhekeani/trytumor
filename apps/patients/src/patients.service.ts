@@ -22,6 +22,10 @@ export class PatientsService {
     return `media/patients/${patientId}`;
   }
 
+  private constructPatientsDirPath() {
+    return `media/patients`;
+  }
+
   private async saveProfilePicture(
     patientId: string,
     profilePictureFile: Express.Multer.File,
@@ -125,6 +129,10 @@ export class PatientsService {
   // JUST FOR DEVELOPMENT
   // DON'T USE IT IN PRODUCTION
   async deleteAll() {
+    await this.storageService.deleteFilesByDirectoryName(
+      this.constructPatientsDirPath(),
+    );
+
     return this.patientsRepository.deleteMany({});
   }
 }

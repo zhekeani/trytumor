@@ -12,7 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { PatientsService } from './patients.service';
-import { JwtAuthGuard } from '@app/common';
+import { JwtAuthGuard, ValidateObjectId } from '@app/common';
 import { Request } from 'express';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { CreatePatientDto } from './dto/create-patient.dto';
@@ -21,14 +21,17 @@ import { CreatePatientDto } from './dto/create-patient.dto';
 export class PatientsController {
   constructor(private readonly patientsService: PatientsService) {}
 
+  @Get('health')
+  async healthCheck() {
+    return 'Service is healthy';
+  }
+
   @UseGuards(JwtAuthGuard)
   @Get('authenticate')
   async authenticate(@Req() request: Request) {
     console.log('This is from patients controller', request);
 
-    return {
-      message: "You're authenticated",
-    };
+    return "You're authenticated";
   }
 
   @Get()
@@ -37,30 +40,26 @@ export class PatientsController {
   }
 
   @Get(':id')
-  async getPatientById(@Param('id') patientId: string) {
+  async getPatientById(@Param('id', ValidateObjectId) patientId: string) {
     return this.patientsService.fetchPatientById(patientId);
   }
 
-  @UseGuards(JwtAuthGuard)
   @Post('create')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async createPatient(
     @Body() createPatientDto: CreatePatientDto,
     @UploadedFile() profilePictureFile: Express.Multer.File,
   ) {
-    console.log(
-      'This line from patients controller is called',
-      profilePictureFile,
-    );
-
     return this.patientsService.create(createPatientDto, profilePictureFile);
   }
 
   @Patch('update/:id')
+  @UseGuards(JwtAuthGuard)
   @UseInterceptors(FileInterceptor('file'))
   async updatePatient(
     @Body() updatePatientDto: Partial<CreatePatientDto>,
-    @Param('id') patientId: string,
+    @Param('id', ValidateObjectId) patientId: string,
     @UploadedFile() profilePictureFile: Express.Multer.File,
   ) {
     return this.patientsService.update(
@@ -78,7 +77,8 @@ export class PatientsController {
   }
 
   @Delete('delete/:id')
-  async deletePatient(@Param('id') patientId: string) {
+  @UseGuards(JwtAuthGuard)
+  async deletePatient(@Param('id', ValidateObjectId) patientId: string) {
     return this.patientsService.delete(patientId);
   }
 }

@@ -97,7 +97,7 @@ describe('PredictionsController (e2e)', () => {
     'test-create-prediction-image.jpg',
   );
 
-  it('should return "Service is healthy" if the service is healthy', async () => {
+  it('/predictions/health (GET), should return "Service is healthy" if the service is healthy', async () => {
     request(app.getHttpServer())
       .get('/predictions/health')
       .expect(200)

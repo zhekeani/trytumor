@@ -15,6 +15,10 @@ import { PatientsService } from './patients.service';
     ConfigModule.forRoot({
       isGlobal: true,
 
+      // Accommodate the different root directory when running on
+      // development and testing environment
+      envFilePath: ['.env', 'apps/patients/.env'],
+
       validationSchema: Joi.object({
         HTTP_PORT: Joi.number().required(),
         RMQ_PORT: Joi.number().required(),
@@ -26,6 +30,8 @@ import { PatientsService } from './patients.service';
 
         MONGODB_URI: Joi.string().required(),
         JWT_SECRET: Joi.string().required(),
+        JWT_TESTING_SECRET: Joi.string().required(),
+
         GOOGLE_STORAGE_PROJECT_ID: Joi.string().required(),
         GOOGLE_STORAGE_CLIENT_EMAIL: Joi.string().required(),
         GOOGLE_STORAGE_BUCKET_NAME: Joi.string().required(),
@@ -47,6 +53,16 @@ import { PatientsService } from './patients.service';
     }),
   ],
   controllers: [PatientsController],
-  providers: [PatientsService, PatientsRepository, JwtStrategy],
+  providers: [
+    PatientsService,
+    PatientsRepository,
+    JwtStrategy,
+    {
+      provide: 'JWT_TESTING_SECRET',
+      useFactory: (configService: ConfigService) =>
+        configService.get('JWT_TESTING_SECRET'),
+      inject: [ConfigService],
+    },
+  ],
 })
 export class PatientsModule {}
