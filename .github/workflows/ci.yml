@@ -1,0 +1,26 @@
+name: CI
+
+on:
+  workflow_dispatch:
+
+  push:
+    paths-ignore:
+      - 'dist/**'
+
+jobs:
+  unit-and-integration:
+    name: Unit and integration testing
+    runs-on: ubuntu-latest
+    steps:
+      - name: Git checkout
+        uses: actions/checkout@v4
+      - name: Install Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - name: Install dependencies
+        run: npm ci
+
+      - name: === Unit & integration testing ===
+        run: npm run test
