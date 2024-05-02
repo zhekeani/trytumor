@@ -5,5 +5,5 @@ export interface ServiceConfig {
 }
 
 export interface ServicesConfig {
-  predictions: ServiceConfig;
+  auth: ServiceConfig;
 }

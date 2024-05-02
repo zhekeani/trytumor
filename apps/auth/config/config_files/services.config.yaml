@@ -1,0 +1,4 @@
+auth:
+  http_port: 3000
+  rmq_port: 3001
+  host: auth

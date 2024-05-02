@@ -1,20 +1,5 @@
 data "google_project" "current" {}
 
-variable environment {
-  type        = object({
-    prefix = string
-    type = string
-  })
-  description = "GCP cloud environment."
-}
-
-variable location {
-  type        = string
-  description = "Project location."
-}
-
-
-
 # Enable the used APIs
 module "project-services" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
@@ -85,6 +70,14 @@ module "ar_reader_project_iam_bindings" {
   bindings = {
     "roles/artifactregistry.reader" = [
       "serviceAccount:${google_service_account.trytumor["artifact_registry_reader"].email}",
+    ]
+
+    "roles/secretmanager.secretAccessor" = [
+      "serviceAccount:${google_service_account.trytumor["secret_accessor"].email}"
+    ]
+
+    "roles/storage.objectAdmin" = [
+      "serviceAccount:${google_service_account.trytumor["object_admin"].email}"
     ]
   }
 }

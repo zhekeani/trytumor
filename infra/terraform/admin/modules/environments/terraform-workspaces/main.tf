@@ -15,26 +15,6 @@ module "project-services" {
   ]
 }
 
-variable "tf_org_name" {
-  type        = string
-  description = "Terraform organization name."
-}
-
-variable "project_name" {
-  type        = string
-  description = "Project name."
-}
-
-variable "tf_service_accounts" {
-  type = object({
-    tf_development = object({
-      email = string
-      name  = string
-    })
-  })
-  description = "Service account to be used by Terraform workspaces."
-}
-
 
 locals {
   sa_id_template           = "sa-tf-%s-%s"
@@ -59,7 +39,8 @@ locals {
         "roles/storage.admin",
         "roles/secretmanager.admin",
         "roles/serviceusage.serviceUsageAdmin",
-        "roles/iam.serviceAccountKeyAdmin"
+        "roles/iam.serviceAccountKeyAdmin",
+        "roles/artifactregistry.admin"
       ]
     }
   }
