@@ -5,13 +5,14 @@ locals {
     type   = "development"
     prefix = "dev"
   }
-  region = "asia-southeast2"
+  region              = "asia-southeast2"
+  storage_bucket_name = "zhekeani-${data.google_project.current.project_id}"
 }
 
 # Create service account and generate service account key
-module service_account {
-  source = "./modules/google/service-account"
-  location = local.region
+module "service_account" {
+  source      = "./modules/google/service-account"
+  location    = local.region
   environment = local.environment
 }
 
@@ -33,16 +34,25 @@ locals {
   secrets_path = [for secret in data.google_secret_manager_secrets.all.secrets : secret.name]
 }
 # Create Artifact Registry repositories
-module artifact_registry {
-  source = "./modules/google/artifact-registry"
-  location = local.region
-  environment = local.environment
+module "artifact_registry" {
+  source            = "./modules/google/artifact-registry"
+  location          = local.region
+  environment       = local.environment
   repositories_name = ["auth"]
 }
 
-output "ar_repositories_url" {
-  value       = module.artifact_registry.repositories_url
+
+# Create storage bucket
+module "storage_bucket" {
+  source      = "./modules/google/storage-bucket"
+  location    = local.region
+  environment = local.environment
+  bucket_name = local.storage_bucket_name
+}
+
+output "storage_bucket_name" {
+  value       = module.storage_bucket.bucket_name
   sensitive   = false
-  description = "Artifact Registry repositories URL."
-  depends_on  = [module.artifact_registry]
+  description = "Created storage bucket name."
+  depends_on  = [module.storage_bucket]
 }

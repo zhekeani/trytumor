@@ -11,7 +11,7 @@ variable "location" {
   description = "The location this repository is located in."
 }
 
-variable repositories_name {
+variable "repositories_name" {
   type        = list(string)
   description = "List of repositories name."
 }

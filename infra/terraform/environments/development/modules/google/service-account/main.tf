@@ -16,7 +16,7 @@ module "project-services" {
 }
 
 locals {
-  sa_id_template = "${var.environment.prefix}-sa-%s"
+  sa_id_template           = "${var.environment.prefix}-sa-%s"
   sa_display_name_template = "Service Account - ${var.environment.type} %s"
 }
 
