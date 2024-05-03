@@ -61,23 +61,3 @@ resource "google_service_account_key" "trytumor" {
   depends_on = [google_service_account.trytumor]
 }
 
-module "ar_reader_project_iam_bindings" {
-  source  = "terraform-google-modules/iam/google//modules/projects_iam"
-  version = "~> 7.7"
-
-  projects = [data.google_project.current.project_id]
-
-  bindings = {
-    "roles/artifactregistry.reader" = [
-      "serviceAccount:${google_service_account.trytumor["artifact_registry_reader"].email}",
-    ]
-
-    "roles/secretmanager.secretAccessor" = [
-      "serviceAccount:${google_service_account.trytumor["secret_accessor"].email}"
-    ]
-
-    "roles/storage.objectAdmin" = [
-      "serviceAccount:${google_service_account.trytumor["object_admin"].email}"
-    ]
-  }
-}

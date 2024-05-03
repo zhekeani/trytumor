@@ -1,5 +1,5 @@
 import { Storage } from '@google-cloud/storage';
-import { DynamicModule, Module } from '@nestjs/common';
+import { DynamicModule, Logger, Module } from '@nestjs/common';
 
 import { ConfigModule, ConfigModuleConfig, SecretConfig } from '../config';
 import { StorageModuleConfig } from './interfaces/storage-module-config.interface';
@@ -28,19 +28,36 @@ export class StorageModule {
         {
           provide: 'BUCKET',
           useFactory: async (...args: any[]) => {
+            const logger = new Logger('StorageModuleLoader');
+
             const { serviceAccountKey, bucketName } = await options.useFactory(
               ...args,
             );
 
-            const bucket = new Storage({
-              projectId: serviceAccountKey.project_id,
-              credentials: {
-                client_email: serviceAccountKey.client_email,
-                private_key: serviceAccountKey.private_key,
-              },
-            }).bucket(bucketName);
+            try {
+              const bucket = new Storage({
+                projectId: serviceAccountKey.project_id,
+                credentials: {
+                  client_email: serviceAccountKey.client_email,
+                  private_key: serviceAccountKey.private_key,
+                },
+              }).bucket(bucketName);
 
-            return bucket;
+              const [exists] = await bucket.exists();
+
+              if (exists) {
+                logger.log(
+                  `Successfully configuring ${bucketName} cloud storage bucket`,
+                );
+              }
+              return bucket;
+            } catch (error) {
+              console.log(JSON.stringify(error));
+              logger.warn(
+                `Failed to configure ${bucketName} cloud storage bucket.`,
+              );
+              return undefined;
+            }
           },
           inject: options.inject || [ConfigService],
         },

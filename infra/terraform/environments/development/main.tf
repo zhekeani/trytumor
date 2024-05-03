@@ -16,6 +16,22 @@ module "service_account" {
   environment = local.environment
 }
 
+locals {
+  service_accounts_email = {
+    for service_account, sa_obj in module.service_account.sa_obj :
+    service_account => sa_obj.email
+  }
+}
+
+module "service_account_iam" {
+  source    = "./modules/google/service-account/iam"
+  sa_emails = local.service_accounts_email
+  storage_buckets = [module.storage_bucket.bucket_name]
+
+  depends_on = [module.service_account, module.storage_bucket]
+}
+
+
 # Store service account key to Secret Manager
 module "sa_key_secrets" {
   for_each = module.service_account.sa_private_keys
