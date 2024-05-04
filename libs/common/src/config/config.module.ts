@@ -1,16 +1,15 @@
 import { SecretManagerServiceClient } from '@google-cloud/secret-manager';
 import { DynamicModule, Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import {
+  ConfigService,
+  ConfigModule as NestConfigModule,
+} from '@nestjs/config';
 import * as dotenv from 'dotenv';
 import { merge } from 'lodash';
 import * as path from 'path';
 
 import { ConfigModuleConfig } from './interfaces';
 import { rewriteRecordWithSecrets } from './utils/config_loader';
-
-dotenv.config({
-  path: path.resolve('apps/predictions/.env'),
-});
 
 @Module({})
 export class ConfigModule {
@@ -23,6 +22,15 @@ export class ConfigModule {
           useFactory: async () => {
             let mergedConfig: Record<string, any> = {};
             let configsToLoad: any[] = options.loads || [];
+            const envPaths = options.envPaths || [];
+
+            if (envPaths.length > 0) {
+              envPaths.forEach((envPath) => {
+                dotenv.config({
+                  path: path.resolve(envPath),
+                });
+              });
+            }
 
             const { secret } = options.secretConfig();
             let secretsToLoad = secret.secretsToLoad;

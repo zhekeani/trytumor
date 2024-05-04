@@ -1,14 +1,17 @@
-// import { readFileSync } from 'fs';
-// import * as yaml from 'js-yaml';
-// import { join } from 'path';
-// import { DatabaseConfig } from '@app/common';
+import { DatabaseConfig } from '@app/common';
+import * as dotenv from 'dotenv';
+import * as path from 'path';
 
-// const YAML_CONFIG_FILENAME = 'database.config.yaml';
+dotenv.config({
+  path: path.resolve('apps/auth/.env'),
+});
 
-// const databaseConfigProperties = yaml.load(
-//   readFileSync(join(__dirname, 'config_files', YAML_CONFIG_FILENAME), 'utf8'),
-// ) as Record<string, any> as DatabaseConfig;
+const MONGODB_CONNECTION_URI = process.env.MONGODB_CONNECTION_URI;
 
-// export const databaseConfig = () => ({
-//   database: databaseConfigProperties,
-// });
+const databaseConfigProperties: DatabaseConfig = {
+  mongodb_uri: MONGODB_CONNECTION_URI,
+};
+
+export const databaseConfig = () => ({
+  database: databaseConfigProperties,
+});

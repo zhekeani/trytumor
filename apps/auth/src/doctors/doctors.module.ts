@@ -1,43 +1,47 @@
 import { Module } from '@nestjs/common';
-
+import { DoctorsController } from './doctors.controller';
+import { DoctorsService } from './doctors.service';
 import {
   ConfigModule,
   DatabaseModule,
-  HealthModule,
   SecretsToLoad,
   ServiceAccountKey,
   StorageConfig,
   StorageModule,
 } from '@app/common';
+import { secretConfig } from '../config/config_files/secret.config';
+import { servicesConfig } from '../config/config_files/services.config';
+import { storageConfig } from '../config/config_files/storage.config';
 import { ConfigService } from '@nestjs/config';
-import { AuthController } from './auth.controller';
-import { AuthService } from './auth.service';
-import { secretConfig } from './config/config_files/secret.config';
-import { servicesConfig } from './config/config_files/services.config';
-import { storageConfig } from './config/config_files/storage.config';
-import { DoctorsModule } from './doctors/doctors.module';
-import { databaseConfig } from './config/config_files/database.config';
+import { DoctorDocument, DoctorSchema } from './models/doctor.schema';
+import { DoctorsRepository } from './doctors.repository';
+import { databaseConfig } from '../config/config_files/database.config';
 
 @Module({
+  controllers: [DoctorsController],
+  providers: [DoctorsService, DoctorsRepository],
+  exports: [DoctorsService],
   imports: [
-    HealthModule,
     ConfigModule.forRootAsync({
-      envPaths: ['.env'],
-      loads: [secretConfig, servicesConfig, storageConfig, databaseConfig],
+      envPaths: ['../.env'],
+      loads: [servicesConfig],
       secretConfig: secretConfig,
     }),
     DatabaseModule.forRootAsync({
       inject: [ConfigService],
+      configModuleConfig: {
+        secretConfig,
+        loads: [storageConfig, databaseConfig],
+      },
       useFactory: (configService: ConfigService) => ({
         environmentRuntime: configService.get('ENV_RUNTIME'),
         deploymentStage: configService.get('NODE_ENV'),
         databaseConfig: configService.get('database'),
       }),
-      configModuleConfig: {
-        secretConfig,
-        loads: [storageConfig],
-      },
     }),
+    DatabaseModule.forFeature([
+      { name: DoctorDocument.name, schema: DoctorSchema },
+    ]),
     StorageModule.forRootAsync({
       configModuleConfig: {
         secretConfig,
@@ -58,10 +62,6 @@ import { databaseConfig } from './config/config_files/database.config';
         };
       },
     }),
-
-    DoctorsModule,
   ],
-  controllers: [AuthController],
-  providers: [AuthService],
 })
-export class AuthModule {}
+export class DoctorsModule {}

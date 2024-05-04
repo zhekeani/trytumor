@@ -1,2 +1,0 @@
-mongodb_uri: "mongodb://localhost:27017/mydatabase"
-mongodb_testing_uri: "mongodb://localhost:27017/mytestdatabase"
