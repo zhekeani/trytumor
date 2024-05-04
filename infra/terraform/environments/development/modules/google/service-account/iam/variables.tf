@@ -7,7 +7,7 @@ variable "sa_emails" {
   description = "Service accounts email to be assigned specific roles."
 }
 
-variable storage_buckets {
+variable "storage_buckets" {
   type        = list(string)
   description = "List of storage bucket to be accessed by service account."
 }

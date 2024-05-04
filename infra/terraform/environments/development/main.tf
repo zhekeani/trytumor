@@ -24,8 +24,8 @@ locals {
 }
 
 module "service_account_iam" {
-  source    = "./modules/google/service-account/iam"
-  sa_emails = local.service_accounts_email
+  source          = "./modules/google/service-account/iam"
+  sa_emails       = local.service_accounts_email
   storage_buckets = [module.storage_bucket.bucket_name]
 
   depends_on = [module.service_account, module.storage_bucket]
@@ -42,6 +42,43 @@ module "sa_key_secrets" {
   secret_type          = "${replace(each.key, "_", "-")}-sa-key"
   environment          = local.environment
 }
+
+# Create and store JWT config to Secret Manager
+locals {
+  jwt_config = {
+    jwt_secret = {
+      provided_secret_data = var.jwt_secret
+      secret_type          = "config-jwt-secret"
+    }
+    jwt_refresh_secret = {
+      provided_secret_data = var.jwt_refresh_secret
+      secret_type          = "config-jwt-refresh-secret"
+    }
+    jwt_testing_secret = {
+      provided_secret_data = var.jwt_testing_secret
+      secret_type          = "config-jwt-testing-secret"
+    }
+    jwt_expiration = {
+      provided_secret_data = var.jwt_expiration
+      secret_type          = "config-jwt-expiration"
+    }
+    jwt_refresh_expiration = {
+      provided_secret_data = var.jwt_refresh_expiration
+      secret_type          = "config-jwt-refresh-expiration"
+    }
+  }
+}
+
+module "jwt_config_secrets" {
+  for_each = local.jwt_config
+
+  source               = "./modules/google/secret"
+  secret_source        = 1
+  provided_secret_data = each.value.provided_secret_data
+  secret_type          = each.value.secret_type
+  environment          = local.environment
+}
+
 
 data "google_secret_manager_secrets" "all" {
 }
@@ -66,9 +103,3 @@ module "storage_bucket" {
   bucket_name = local.storage_bucket_name
 }
 
-output "storage_bucket_name" {
-  value       = module.storage_bucket.bucket_name
-  sensitive   = false
-  description = "Created storage bucket name."
-  depends_on  = [module.storage_bucket]
-}

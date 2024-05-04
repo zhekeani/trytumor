@@ -17,6 +17,7 @@ import { servicesConfig } from './config/config_files/services.config';
 import { storageConfig } from './config/config_files/storage.config';
 import { DoctorsModule } from './doctors/doctors.module';
 import { databaseConfig } from './config/config_files/database.config';
+import { DummyProvider } from './utils/dummy/dummy-provider';
 
 @Module({
   imports: [
@@ -62,6 +63,6 @@ import { databaseConfig } from './config/config_files/database.config';
     DoctorsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService],
+  providers: [AuthService, DummyProvider],
 })
 export class AuthModule {}

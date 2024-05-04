@@ -18,3 +18,10 @@ output "ar_repositories_url" {
   description = "Artifact Registry repositories URL."
   depends_on  = [module.artifact_registry]
 }
+
+output "storage_bucket_name" {
+  value       = module.storage_bucket.bucket_name
+  sensitive   = false
+  description = "Created storage bucket name."
+  depends_on  = [module.storage_bucket]
+}

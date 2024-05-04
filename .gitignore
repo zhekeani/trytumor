@@ -65,3 +65,4 @@ terraform.rc
 *.tfstate.backup.*
 *.tfplan
 *.secret.tfvars
+*.secret.auto.tfvars

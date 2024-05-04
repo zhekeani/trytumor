@@ -18,7 +18,7 @@ module "ar_reader_project_iam_bindings" {
 }
 
 module "storage_buckets_iam_bindings" {
-  source  = "terraform-google-modules/iam/google//modules/storage_buckets_iam"
+  source          = "terraform-google-modules/iam/google//modules/storage_buckets_iam"
   mode            = "additive"
   storage_buckets = var.storage_buckets
 
