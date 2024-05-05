@@ -1,5 +1,6 @@
-import { AbstractDocument, PredictionsThumbnail } from '@app/common';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import { AbstractDocument } from '../../database';
+import { PredictionsThumbnail } from './prediction-thumbnail.schema';
 
 @Schema()
 export class DoctorDocument extends AbstractDocument {

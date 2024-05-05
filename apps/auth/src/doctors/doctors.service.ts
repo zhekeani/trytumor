@@ -7,10 +7,10 @@ import * as bcrypt from 'bcryptjs';
 import * as Bluebird from 'bluebird';
 import { FilterQuery, Types } from 'mongoose';
 
-import { StorageService } from '@app/common';
+import { DoctorDocument, StorageService } from '@app/common';
 import { DoctorsRepository } from './doctors.repository';
 import { CreateDoctorDto } from './dto/create-doctor.dto';
-import { DoctorDocument } from './models/doctor.schema';
+
 import { DoctorNameAndEmail } from './interfaces/doctor-name-and-email.interface';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
 
@@ -180,5 +180,13 @@ export class DoctorsService {
     } catch (error) {
       throw error;
     }
+  }
+
+  // delete specific doctor refresh token
+  async deleteRefreshToken(doctorId: string) {
+    return this.doctorsRepository.findOneAndUpdate(
+      { _id: doctorId },
+      { $set: { refreshToken: null } },
+    );
   }
 }

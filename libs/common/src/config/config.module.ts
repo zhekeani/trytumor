@@ -8,8 +8,9 @@ import * as dotenv from 'dotenv';
 import { merge } from 'lodash';
 import * as path from 'path';
 
-import { ConfigModuleConfig } from './interfaces';
+import { ConfigModuleConfig, SecretsToLoad } from './interfaces';
 import { rewriteRecordWithSecrets } from './utils/config_loader';
+import { snakeToCamel } from './utils/snake-to-camel';
 
 @Module({})
 export class ConfigModule {
@@ -33,7 +34,7 @@ export class ConfigModule {
             }
 
             const { secret } = options.secretConfig();
-            let secretsToLoad = secret.secretsToLoad;
+            let yamlSecretsToLoad = secret.secretsToLoad;
 
             // Check connecting to Secret Manager
             const client = new SecretManagerServiceClient({
@@ -44,8 +45,18 @@ export class ConfigModule {
               },
             });
 
-            await rewriteRecordWithSecrets(secretsToLoad, undefined, client);
+            await rewriteRecordWithSecrets(
+              yamlSecretsToLoad,
+              undefined,
+              client,
+            );
 
+            const secretsToLoad: SecretsToLoad = {};
+            Object.keys(yamlSecretsToLoad).forEach((snakeCaseSecret) => {
+              const camelCaseSecret = snakeToCamel(snakeCaseSecret);
+              secretsToLoad[camelCaseSecret] =
+                yamlSecretsToLoad[snakeCaseSecret];
+            });
             const loadedSecrets = () => ({
               secrets: secretsToLoad,
             });

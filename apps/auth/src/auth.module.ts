@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import {
+  AuthGuardModule,
   ConfigModule,
   DatabaseModule,
   HealthModule,
@@ -18,14 +19,29 @@ import { storageConfig } from './config/config_files/storage.config';
 import { DoctorsModule } from './doctors/doctors.module';
 import { databaseConfig } from './config/config_files/database.config';
 import { DummyProvider } from './utils/dummy/dummy-provider';
+import { JwtModule } from '@nestjs/jwt';
+import { LocalStrategy } from './utils/strategies/local.strategy';
 
 @Module({
   imports: [
     HealthModule,
+    JwtModule.register({}),
     ConfigModule.forRootAsync({
       envPaths: ['.env'],
       loads: [secretConfig, servicesConfig, storageConfig, databaseConfig],
       secretConfig: secretConfig,
+    }),
+    AuthGuardModule.forRootAsync({
+      inject: [ConfigService],
+      configModuleConfig: {
+        secretConfig,
+        loads: [secretConfig],
+      },
+      useFactory: (configService: ConfigService) => ({
+        jwtSecret: configService.get<SecretsToLoad>('secrets').jwtSecret,
+        jwtRefreshSecret:
+          configService.get<SecretsToLoad>('secrets').jwtRefreshSecret,
+      }),
     }),
     DatabaseModule.forRootAsync({
       inject: [ConfigService],
@@ -45,10 +61,10 @@ import { DummyProvider } from './utils/dummy/dummy-provider';
         loads: [storageConfig],
       },
       useFactory: (configService: ConfigService) => {
-        const { object_admin_sa_key: encodedObjectAdminKey } =
+        const { objectAdminSaKey } =
           configService.get<SecretsToLoad>('secrets');
         const objectAdminKey: ServiceAccountKey = JSON.parse(
-          Buffer.from(encodedObjectAdminKey, 'base64').toString(),
+          Buffer.from(objectAdminSaKey, 'base64').toString(),
         );
         const { bucket_name: bucketName } =
           configService.get<StorageConfig>('storage');
@@ -63,6 +79,6 @@ import { DummyProvider } from './utils/dummy/dummy-provider';
     DoctorsModule,
   ],
   controllers: [AuthController],
-  providers: [AuthService, DummyProvider],
+  providers: [AuthService, LocalStrategy],
 })
 export class AuthModule {}

@@ -4,6 +4,8 @@ import { DoctorsService } from './doctors.service';
 import {
   ConfigModule,
   DatabaseModule,
+  DoctorDocument,
+  DoctorSchema,
   SecretsToLoad,
   ServiceAccountKey,
   StorageConfig,
@@ -13,7 +15,7 @@ import { secretConfig } from '../config/config_files/secret.config';
 import { servicesConfig } from '../config/config_files/services.config';
 import { storageConfig } from '../config/config_files/storage.config';
 import { ConfigService } from '@nestjs/config';
-import { DoctorDocument, DoctorSchema } from './models/doctor.schema';
+
 import { DoctorsRepository } from './doctors.repository';
 import { databaseConfig } from '../config/config_files/database.config';
 
@@ -48,7 +50,7 @@ import { databaseConfig } from '../config/config_files/database.config';
         loads: [storageConfig],
       },
       useFactory: (configService: ConfigService) => {
-        const { object_admin_sa_key: encodedObjectAdminKey } =
+        const { objectAdminSaKey: encodedObjectAdminKey } =
           configService.get<SecretsToLoad>('secrets');
         const objectAdminKey: ServiceAccountKey = JSON.parse(
           Buffer.from(encodedObjectAdminKey, 'base64').toString(),

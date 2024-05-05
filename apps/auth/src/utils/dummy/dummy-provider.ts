@@ -7,6 +7,6 @@ export class DummyProvider {
   constructor(private readonly configService: ConfigService) {}
 
   async tryConfigService() {
-    return this.configService.get<ServicesConfig>('services');
+    return this.configService.get<ServicesConfig>('secrets');
   }
 }

@@ -1,10 +1,15 @@
 import { ServiceAccountKey } from '../../common';
 
 export interface SecretsToLoad {
-  object_admin_sa_key?: string;
+  objectAdminSaKey?: string;
+  jwtSecret?: string;
+  jwtRefreshSecret?: string;
+  jwtTestingSecret?: string;
+  jwtExpiration?: string;
+  jwtRefreshExpiration?: string;
 }
 
 export interface SecretConfig {
   secretAccessorKey: ServiceAccountKey;
-  secretsToLoad: SecretsToLoad;
+  secretsToLoad: SecretsToLoad | Record<string, any>;
 }
