@@ -92,10 +92,12 @@ export class AuthService {
   }
 
   async refreshAccessToken(
-    doctor: DoctorDocument,
+    doctorId: string,
     refreshToken: string,
     response: Response,
   ) {
+    const doctor = await this.doctorsService.fetchDoctorById(doctorId);
+
     if (!doctor.refreshToken) {
       throw new ForbiddenException('Access denied');
     }

@@ -5,7 +5,10 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { TokenPayload } from '../interfaces';
 
 @Injectable()
-export class JwtRefreshStrategy extends PassportStrategy(Strategy) {
+export class JwtRefreshStrategy extends PassportStrategy(
+  Strategy,
+  'jwt-refresh',
+) {
   constructor(@Inject('JWT_REFRESH_SECRET') jwtRefreshSecret: string) {
     super({
       jwtFromRequest: ExtractJwt.fromExtractors([
@@ -20,7 +23,7 @@ export class JwtRefreshStrategy extends PassportStrategy(Strategy) {
           });
 
           return (
-            request?.cookies?.Authentication || headerCookiesObj.Authentication
+            request?.cookies?.refresh_token || headerCookiesObj.refresh_token
           );
         },
       ]),

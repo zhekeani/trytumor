@@ -16,6 +16,7 @@ import {
   JwtAuthGuard,
   JwtRefreshAuthGuard,
   RefreshToken,
+  TokenPayload,
 } from '@app/common';
 import { LocalAuthGuard } from './utils/guards/local-auth.guard';
 
@@ -47,21 +48,25 @@ export class AuthController {
   }
 
   // check authentication
-  @UseGuards(JwtAuthGuard)
   @Post('authenticate')
+  @UseGuards(JwtAuthGuard)
   async authenticate(@CurrentDoctor() doctor: DoctorDocument) {
     return doctor;
   }
 
   // refresh access token
-  @UseGuards(JwtRefreshAuthGuard)
   @Get('refresh')
+  @UseGuards(JwtRefreshAuthGuard)
   async refreshToken(
-    @CurrentDoctor() doctor: DoctorDocument,
+    @CurrentDoctor() doctor: TokenPayload,
     @RefreshToken() refreshToken: string,
     @Res({ passthrough: true }) response: Response,
   ) {
-    await this.authService.refreshAccessToken(doctor, refreshToken, response);
+    await this.authService.refreshAccessToken(
+      doctor.doctorId,
+      refreshToken,
+      response,
+    );
 
     response.send(doctor);
   }
