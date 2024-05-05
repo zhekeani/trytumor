@@ -1,0 +1,8 @@
+auth:
+  http_port: 3000
+  rmq_port: 3001
+  host: auth
+patients:
+  http_port: 3003
+  rmq_port: 3004
+  host: patients

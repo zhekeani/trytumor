@@ -33,7 +33,25 @@
       "sourceRoot": "apps/auth/src",
       "compilerOptions": {
         "tsConfigPath": "apps/auth/tsconfig.app.json",
-        "assets": [{ "include": "../config/**/*.yaml" }]
+        "assets": [
+          {
+            "include": "../config/**/*.yaml"
+          }
+        ]
+      }
+    },
+    "patients": {
+      "type": "application",
+      "root": "apps/patients",
+      "entryFile": "main",
+      "sourceRoot": "apps/patients/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/patients/tsconfig.app.json",
+        "assets": [
+          {
+            "include": "../config/**/*.yaml"
+          }
+        ]
       }
     }
   },

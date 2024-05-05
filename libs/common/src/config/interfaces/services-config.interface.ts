@@ -5,5 +5,6 @@ export interface ServiceConfig {
 }
 
 export interface ServicesConfig {
-  auth: ServiceConfig;
+  auth?: ServiceConfig;
+  patients?: ServiceConfig;
 }

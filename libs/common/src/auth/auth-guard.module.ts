@@ -51,11 +51,16 @@ export class AuthGuardModule {
           inject: options.inject || [ConfigService],
           useFactory: async (...args: any[]) => {
             const logger = new Logger('AuthGuardModuleLoader');
+            const defaultRefreshSecret = 'refresh_secret';
 
             const { jwtRefreshSecret } = await options.useFactory(...args);
 
             if (!jwtRefreshSecret) {
               logger.warn('Failed to retrieve JWT refresh secret.');
+              logger.warn(
+                `Using the default value '${defaultRefreshSecret}' as a fallback value`,
+              );
+              return defaultRefreshSecret;
             }
 
             logger.log('Successfully retrieving refresh JWT secret.');
