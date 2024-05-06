@@ -15,7 +15,7 @@ import { Gender } from '@app/common';
 export class CreatePatientDto {
   @IsUrl()
   @IsOptional()
-  profilePictureURL: string;
+  profilePicURL: string;
 
   @IsString()
   fullName: string;

@@ -1,6 +1,7 @@
 import {
   AuthGuardModule,
   ConfigModule,
+  databaseConfig,
   DatabaseModule,
   HealthModule,
   PatientDocument,
@@ -17,6 +18,7 @@ import { Module } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PatientsController } from './patients.controller';
 import { PatientsService } from './patients.service';
+import { PatientsRepository } from './patients.repository';
 
 const envPath = 'apps/patients/.env';
 
@@ -26,7 +28,7 @@ const envPath = 'apps/patients/.env';
     ConfigModule.forRootAsync({
       envPaths: ['.env'],
       secretConfig: () => secretConfig(envPath),
-      loads: [servicesConfig, storageConfig],
+      loads: [servicesConfig, storageConfig, () => databaseConfig(envPath)],
     }),
     AuthGuardModule.forRootAsync({
       inject: [ConfigService],
@@ -42,7 +44,7 @@ const envPath = 'apps/patients/.env';
       inject: [ConfigService],
       configModuleConfig: {
         secretConfig: () => secretConfig(envPath),
-        loads: [() => secretConfig(envPath)],
+        loads: [() => databaseConfig(envPath)],
       },
       useFactory: (configService: ConfigService) => ({
         environmentRuntime: configService.get('ENV_RUNTIME'),
@@ -75,6 +77,6 @@ const envPath = 'apps/patients/.env';
     }),
   ],
   controllers: [PatientsController],
-  providers: [PatientsService],
+  providers: [PatientsService, PatientsRepository],
 })
 export class PatientsModule {}

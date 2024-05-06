@@ -15,18 +15,18 @@ services:
     ports:
       - '3000:3000'
 
-  # patients:
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/patients/Dockerfile
-  #     target: development
-  #   volumes:
-  #     - .:/usr/src/app
-  #   command: npm run start:dev patients
-  #   env_file:
-  #     - ./.env
-  #   ports:
-  #     - '3003:3003'
+  patients:
+    build:
+      context: .
+      dockerfile: ./apps/patients/Dockerfile
+      target: development
+    volumes:
+      - .:/usr/src/app
+    command: npm run start:dev patients
+    env_file:
+      - ./apps/patients/.env
+    ports:
+      - '3003:3003'
 
   # predictions:
   #   build:
