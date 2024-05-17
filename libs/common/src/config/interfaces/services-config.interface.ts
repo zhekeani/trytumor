@@ -7,4 +7,5 @@ export interface ServiceConfig {
 export interface ServicesConfig {
   auth?: ServiceConfig;
   patients?: ServiceConfig;
+  predictions?: ServiceConfig;
 }

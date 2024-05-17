@@ -6,14 +6,18 @@ locals {
     prefix = "dev"
   }
   region              = "asia-southeast2"
+  project_name        = data.google_project.current.name
   storage_bucket_name = "zhekeani-${data.google_project.current.project_id}"
 }
 
-# Create service account and generate service account key
+
+# ----------------------------------------------------------------------------------- #
+# Service Account
 module "service_account" {
   source      = "./modules/google/service-account"
   location    = local.region
   environment = local.environment
+  project_id  = data.google_project.current.project_id
 }
 
 locals {
@@ -25,6 +29,7 @@ locals {
 
 module "service_account_iam" {
   source          = "./modules/google/service-account/iam"
+  project_id      = data.google_project.current.project_id
   sa_emails       = local.service_accounts_email
   storage_buckets = [module.storage_bucket.bucket_name]
 
@@ -32,7 +37,9 @@ module "service_account_iam" {
 }
 
 
-# Store service account key to Secret Manager
+# ----------------------------------------------------------------------------------- #
+# Secret Manager
+
 module "sa_key_secrets" {
   for_each = module.service_account.sa_private_keys
 
@@ -43,7 +50,7 @@ module "sa_key_secrets" {
   environment          = local.environment
 }
 
-# Create and store JWT config to Secret Manager
+
 locals {
   jwt_config = {
     jwt_secret = {
@@ -80,6 +87,23 @@ module "jwt_config_secrets" {
 }
 
 
+# ----------------------------------------------------------------------------------- #
+# Storage Bucket
+
+
+# Create storage bucket
+module "storage_bucket" {
+  source      = "./modules/google/storage-bucket"
+  location    = local.region
+  environment = local.environment
+  bucket_name = local.storage_bucket_name
+}
+
+
+# ----------------------------------------------------------------------------------- #
+# Artifact Registry
+
+
 data "google_secret_manager_secrets" "all" {
 }
 
@@ -94,12 +118,4 @@ module "artifact_registry" {
   repositories_name = ["auth"]
 }
 
-
-# Create storage bucket
-module "storage_bucket" {
-  source      = "./modules/google/storage-bucket"
-  location    = local.region
-  environment = local.environment
-  bucket_name = local.storage_bucket_name
-}
 

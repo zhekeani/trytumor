@@ -12,6 +12,17 @@ output "secrets_path" {
   depends_on  = [data.google_secret_manager_secrets.all]
 }
 
+output "jwt_config_secrets_name" {
+  value = {
+    for secret in keys(module.jwt_config_secrets) :
+    secret => module.jwt_config_secrets[secret].secret_name
+  }
+  sensitive   = true
+  description = "JWT config secrets name that stored in the Secret Manager."
+  depends_on  = [module.jwt_config_secrets]
+}
+
+
 output "ar_repositories_url" {
   value       = module.artifact_registry.repositories_url
   sensitive   = false

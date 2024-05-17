@@ -28,15 +28,15 @@ services:
     ports:
       - '3003:3003'
 
-  # predictions:
-  #   build:
-  #     context: .
-  #     dockerfile: ./apps/predictions/Dockerfile
-  #     target: development
-  #   volumes:
-  #     - .:/usr/src/app
-  #   command: npm run start:dev predictions
-  #   env_file:
-  #     - ./.env
-  #   ports:
-  #     - '3005:3005'
+  predictions:
+    build:
+      context: .
+      dockerfile: ./apps/predictions/Dockerfile
+      target: development
+    volumes:
+      - .:/usr/src/app
+    command: npm run start:dev predictions
+    env_file:
+      - ./apps/predictions/.env
+    ports:
+      - '3005:3005'

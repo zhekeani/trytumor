@@ -1,11 +1,9 @@
-data "google_project" "current" {}
-
 # Enable the used APIs
 module "project-services" {
   source  = "terraform-google-modules/project-factory/google//modules/project_services"
   version = "~> 14.5"
 
-  project_id                  = data.google_project.current.project_id
+  project_id                  = var.project_id
   enable_apis                 = true
   disable_services_on_destroy = false
 
@@ -31,13 +29,13 @@ locals {
       account_id   = format(local.sa_id_template, "object-admin")
       display_name = format(local.sa_display_name_template, "storage object admin.")
     }
-    # kubernetes_engine = {
-    #   account_id   = "${var.environment.prefix}-kubernetes-engine"
-    #   display_name = "Service Account - ${var.environment.type} Kubernetes Engine."
-    # }
     artifact_registry_reader = {
       account_id   = format(local.sa_id_template, "ar-reader")
       display_name = format(local.sa_display_name_template, "Artifact Registry Reader.")
+    }
+    pubsub_admin = {
+      account_id   = format(local.sa_id_template, "pubsub-admin")
+      display_name = format(local.sa_display_name_template, "Pub/Sub admin.")
     }
   }
 }

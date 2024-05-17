@@ -17,7 +17,7 @@ export class AuthService {
   ) {}
 
   getHello(): string {
-    return;
+    return 'Hello World!';
   }
 
   private async setTokens(doctor: DoctorDocument) {
