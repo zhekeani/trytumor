@@ -2,7 +2,7 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { AbstractDocument } from '../../database';
 
 @Schema({ _id: false })
-export class PatientData {
+export class PatientDataSchema {
   @Prop()
   id: string;
 
@@ -17,7 +17,7 @@ export class PatientData {
 }
 
 @Schema({ _id: false })
-export class Percentage {
+export class PercentageSchema {
   @Prop()
   glioma: number;
 
@@ -32,19 +32,19 @@ export class Percentage {
 }
 
 @Schema({ _id: false })
-export class PredictionResult {
+export class PredictionResultSchema {
   @Prop()
   imageUrl: string;
 
   @Prop()
   imageIndex: number;
 
-  @Prop({ type: Percentage })
-  percentages: Percentage;
+  @Prop({ type: PercentageSchema })
+  percentages: PercentageSchema;
 }
 
 @Schema({ _id: false })
-export class PredictionData {
+export class PredictionDataSchema {
   @Prop()
   id: string;
 
@@ -60,11 +60,11 @@ export class PredictionData {
   @Prop()
   dateAndTime: Date;
 
-  @Prop({ type: [PredictionResult] })
-  results: PredictionResult[];
+  @Prop({ type: [PredictionResultSchema] })
+  results: PredictionResultSchema[];
 
-  @Prop({ type: Percentage })
-  resultsMean: Percentage;
+  @Prop({ type: PercentageSchema })
+  resultsMean: PercentageSchema;
 
   @Prop()
   fileName: string;
@@ -75,11 +75,11 @@ export class PredictionData {
 
 @Schema()
 export class PredictionDocument extends AbstractDocument {
-  @Prop({ type: PatientData })
-  patientData: PatientData;
+  @Prop({ type: PatientDataSchema })
+  patientData: PatientDataSchema;
 
-  @Prop({ type: [PredictionData] })
-  predictionsData?: PredictionData[];
+  @Prop({ type: [PredictionDataSchema] })
+  predictionsData?: PredictionDataSchema[];
 }
 
 export const PredictionSchema =

@@ -1,15 +1,21 @@
 import {
+  PredictionResult,
+  PubsubService,
+  StorageService,
+  TokenPayload,
+} from '@app/common';
+import {
   BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
-  UnauthorizedException,
 } from '@nestjs/common';
-import * as Bluebird from 'bluebird';
-import axios, { AxiosRequestConfig } from 'axios';
-import { PredictionsRepository } from './predictions.repository';
-import { PubsubService, StorageService } from '@app/common';
 import { ConfigService } from '@nestjs/config';
+import * as Bluebird from 'bluebird';
+import { Types } from 'mongoose';
+import { HelpersService } from './helpers/helpers.service';
+import { PredictionsRepository } from './predictions.repository';
+import { CreatePredictionDto } from './utils/dto/create-prediction.dto';
 
 @Injectable()
 export class PredictionsService {
@@ -20,40 +26,118 @@ export class PredictionsService {
     private readonly storageService: StorageService,
     private readonly pubsubService: PubsubService,
     private readonly configService: ConfigService,
+    private readonly helpersService: HelpersService,
   ) {}
 
   getHello(): string {
     return 'Hello World!';
   }
 
-  async callCloudFunction(
+  // Create prediction
+  async create(
+    patientId: string,
     authToken: string,
-    topicId: string,
-    storageBucketPath: string,
-    imageIndex: number,
+    tokenPayload: TokenPayload,
+    createPredictionDto: CreatePredictionDto,
+    imageFiles: Express.Multer.File[],
   ) {
-    const cloudFnUrl = this.configService.get('CLOUD_FN_URL');
+    // Check if the patient exists
+    await this.predictionsRepository.findOne({
+      'patientData.id': patientId,
+    });
 
-    const config: AxiosRequestConfig = {
-      headers: {
-        'auth-token': authToken,
+    let imagesFilePath: string[] = Array.from(
+      { length: imageFiles.length },
+      () => '',
+    );
+    let predictionsResult: (PredictionResult | undefined)[] = Array.from(
+      { length: imageFiles.length },
+      () => undefined,
+    );
+
+    // create request to cloud function to predict
+    const predictionDataId = new Types.ObjectId();
+    await Bluebird.Promise.map(
+      imageFiles,
+      async (imageFile, index) => {
+        const imageFilePath = this.helpersService.constructPredictionPath(
+          patientId,
+          predictionDataId.toHexString(),
+          index,
+        );
+        const imagePublicUrl =
+          await this.helpersService.saveImageToStorageBucket(
+            imageFile,
+            patientId,
+            predictionDataId.toHexString(),
+            index,
+          );
+
+        imagesFilePath[index] = imageFilePath;
+        predictionsResult[index] = {
+          imagePublicUrl,
+          filename: imageFile.originalname,
+          index,
+        };
       },
-    };
+      { concurrency: imageFiles.length },
+    );
+
+    // Create PubSub topic and subscription
+    const topicToListen =
+      await this.pubsubService.createTopicIfNotExists('nestjs-predict');
+    const subscription = await this.pubsubService.createSubscriptionIfNotExists(
+      topicToListen,
+      'nestjs-predict-multiple',
+    );
+
+    const topicNameToListen = topicToListen.name.split('/').pop();
 
     try {
-      const response = await axios.post(
-        cloudFnUrl,
-        {
-          topicId,
-          storageBucketPath,
-          imageIndex,
+      // Send prediction to cloud function
+      await Bluebird.Promise.map(
+        imagesFilePath,
+        async (imageFilePath, index) => {
+          const cloudFnResponse =
+            await this.helpersService.createRequestToCloudFn(
+              authToken,
+              topicNameToListen,
+              imageFilePath,
+              index,
+            );
+          console.log(JSON.stringify(cloudFnResponse));
         },
-        config,
+        { concurrency: imageFiles.length },
       );
-      return response.data;
+
+      // Listen to PubSub for prediction result
+      const predictionsResultDto = await this.pubsubService.listenForMessages(
+        subscription,
+        imageFiles.length,
+      );
+      predictionsResultDto.forEach((predictionResultDto) => {
+        predictionsResult[predictionResultDto.index].percentage =
+          predictionResultDto.percentage;
+      });
+
+      const predictionDataSchema =
+        await this.helpersService.constructPredictionDataSchema(
+          tokenPayload,
+          createPredictionDto,
+          predictionsResult,
+          patientId,
+          predictionDataId.toString(),
+        );
+
+      const savedPrediction = await this.helpersService.storePredictionData(
+        patientId,
+        predictionDataSchema,
+      );
+
+      return savedPrediction;
     } catch (error) {
-      this.logger.warn(error.message);
-      throw UnauthorizedException;
+      console.error(`Received error while publishing: ${error.message}`);
+      throw new InternalServerErrorException(error.message);
     }
   }
 
@@ -98,12 +182,13 @@ export class PredictionsService {
       await Bluebird.Promise.map(
         filesPath,
         async (path, index) => {
-          const cloudFnResponse = await this.callCloudFunction(
-            authToken,
-            topicNameToListen,
-            path,
-            index,
-          );
+          const cloudFnResponse =
+            await this.helpersService.createRequestToCloudFn(
+              authToken,
+              topicNameToListen,
+              path,
+              index,
+            );
 
           console.log(JSON.stringify(cloudFnResponse));
         },
@@ -115,18 +200,14 @@ export class PredictionsService {
           topicToListen,
           'nestjs-predict-multiple',
         );
-      const receivedMessagesString = await this.pubsubService.listenForMessages(
+      const predictionsResultDto = await this.pubsubService.listenForMessages(
         subscription,
         files.length,
       );
 
-      receivedMessagesString.forEach((receivedMessageString) => {
-        const receivedMessageObj = JSON.parse(receivedMessageString) as {
-          index: number;
-          percentage: any;
-        };
-        predictionsResult[receivedMessageObj.index].percentage =
-          receivedMessageObj.percentage;
+      predictionsResultDto.forEach((predictionResultDto) => {
+        predictionsResult[predictionResultDto.index].percentage =
+          predictionResultDto.percentage;
       });
 
       return {

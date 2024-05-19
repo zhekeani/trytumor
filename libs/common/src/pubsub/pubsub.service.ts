@@ -1,5 +1,10 @@
 import { PubSub, Subscription, Topic } from '@google-cloud/pubsub';
 import { Inject, Injectable } from '@nestjs/common';
+import {
+  PercentageResult,
+  PredictionResult,
+  PredictionResultDto,
+} from '../common';
 
 @Injectable()
 export class PubsubService {
@@ -20,7 +25,7 @@ export class PubsubService {
   }
 
   async listenForMessages(subscription: Subscription, numMessages: number) {
-    return new Promise<string[]>((resolve, reject) => {
+    return new Promise<PredictionResultDto[]>((resolve, reject) => {
       const receivedMessages = [];
 
       const handleMessage = (message: any) => {
@@ -36,7 +41,20 @@ export class PubsubService {
         if (receivedMessages.length == numMessages) {
           subscription.removeListener('message', handleMessage);
 
-          resolve(receivedMessages);
+          let predictionsResultDto: (any | PredictionResultDto)[] = Array.from(
+            { length: numMessages },
+            () => undefined,
+          );
+
+          receivedMessages.forEach((receivedMessage) => {
+            const predictionResultDtoObj = JSON.parse(
+              receivedMessage,
+            ) as PredictionResultDto;
+            predictionsResultDto[predictionResultDtoObj.index] =
+              predictionResultDtoObj;
+          });
+
+          resolve(predictionsResultDto);
         }
       };
 

@@ -28,7 +28,7 @@ const envPath = 'apps/predictions/.env';
   imports: [
     HealthModule,
     ConfigModule.forRootAsync({
-      envPaths: ['env'],
+      envPaths: ['.env'],
       secretConfig: () => secretConfig(envPath),
       loads: [servicesConfig, storageConfig, () => databaseConfig(envPath)],
     }),
