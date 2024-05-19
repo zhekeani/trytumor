@@ -1,7 +1,7 @@
 export interface ServiceConfig {
   http_port?: number;
   rmq_port?: number;
-  host: number;
+  host: string;
 }
 
 export interface ServicesConfig {

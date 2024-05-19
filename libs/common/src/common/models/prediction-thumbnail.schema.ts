@@ -24,7 +24,7 @@ export class PredictionsThumbnail {
   patientId: string;
 
   @Prop()
-  userId: string;
+  doctorId: string;
 
   @Prop({ type: PredictionThumbnail })
   thumbnail: PredictionThumbnail;

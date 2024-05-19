@@ -17,6 +17,7 @@ import { storageConfig } from './config/config_files/storage.config';
 import { DoctorsModule } from './doctors/doctors.module';
 import { DoctorNameAndEmailStringify } from './utils/middlewares/doctorName-email-stringify.middleware';
 import { LocalStrategy } from './utils/strategies/local.strategy';
+import { EventsModule } from './events/events.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { LocalStrategy } from './utils/strategies/local.strategy';
       }),
     }),
     DoctorsModule,
+    EventsModule,
   ],
   controllers: [AuthController],
   providers: [AuthService, LocalStrategy],
