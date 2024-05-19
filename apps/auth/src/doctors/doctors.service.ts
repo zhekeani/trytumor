@@ -13,12 +13,14 @@ import { CreateDoctorDto } from './dto/create-doctor.dto';
 
 import { DoctorNameAndEmail } from './interfaces/doctor-name-and-email.interface';
 import { UpdateDoctorDto } from './dto/update-doctor.dto';
+import { EventsService } from '../events/events.service';
 
 @Injectable()
 export class DoctorsService {
   constructor(
     private readonly doctorsRepository: DoctorsRepository,
     private readonly storageService: StorageService,
+    private readonly eventsService: EventsService,
   ) {}
 
   // Validate email and doctorName
@@ -163,6 +165,13 @@ export class DoctorsService {
           }
         },
       ]);
+      if (updateDoctorDto && updateDoctorDto.fullName) {
+        this.eventsService.emitDoctorUpdateEvent({
+          doctorId: doctorId,
+          fullName: updateDoctorDto.fullName,
+        });
+      }
+
       return results[0];
     } catch (error) {
       throw error;

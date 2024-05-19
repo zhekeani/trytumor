@@ -1,22 +1,22 @@
+import { Module } from '@nestjs/common';
+import { EventsController } from './events.controller';
+import { EventsService } from './events.service';
 import {
   ConfigModule,
   databaseConfig,
   DatabaseModule,
-  DoctorDocument,
-  DoctorSchema,
+  PredictionDocument,
+  PredictionSchema,
   secretConfig,
   Services,
   ServicesConfig,
   servicesConfig,
 } from '@app/common';
-import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { DoctorsRepository } from '../doctors/doctors.repository';
-import { EventsController } from './events.controller';
-import { EventsService } from './events.service';
+import { ConfigService } from '@nestjs/config';
+import { PredictionsRepository } from '../predictions.repository';
 
-const envPath = 'apps/auth/.env';
+const envPath = 'apps/predictions/.env';
 
 @Module({
   imports: [
@@ -27,7 +27,7 @@ const envPath = 'apps/auth/.env';
     }),
     ClientsModule.registerAsync([
       {
-        name: Services.Predictions,
+        name: Services.Doctors,
         inject: [ConfigService],
         imports: [
           ConfigModule.forRootAsync({
@@ -40,8 +40,28 @@ const envPath = 'apps/auth/.env';
           return {
             transport: Transport.TCP,
             options: {
-              host: servicesConfig.predictions.host,
-              port: servicesConfig.predictions.rmq_port,
+              host: servicesConfig.auth.host,
+              port: servicesConfig.auth.rmq_port,
+            },
+          };
+        },
+      },
+      {
+        name: Services.Patients,
+        inject: [ConfigService],
+        imports: [
+          ConfigModule.forRootAsync({
+            secretConfig: () => secretConfig(envPath),
+            loads: [servicesConfig],
+          }),
+        ],
+        useFactory: (configService: ConfigService) => {
+          const servicesConfig = configService.get<ServicesConfig>('services');
+          return {
+            transport: Transport.TCP,
+            options: {
+              host: servicesConfig.patients.host,
+              port: servicesConfig.patients.rmq_port,
             },
           };
         },
@@ -60,11 +80,11 @@ const envPath = 'apps/auth/.env';
       }),
     }),
     DatabaseModule.forFeature([
-      { name: DoctorDocument.name, schema: DoctorSchema },
+      { name: PredictionDocument.name, schema: PredictionSchema },
     ]),
   ],
   controllers: [EventsController],
-  providers: [EventsService, DoctorsRepository],
+  providers: [EventsService, PredictionsRepository],
   exports: [EventsService],
 })
 export class EventsModule {}

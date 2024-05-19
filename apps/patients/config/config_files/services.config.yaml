@@ -3,6 +3,10 @@ auth:
   rmq_port: 3001
   host: auth
 patients:
-  http_port: 3003
-  rmq_port: 3004
+  http_port: 3002
+  rmq_port: 3003
   host: patients
+predictions:
+  http_port: 3004
+  rmq_port: 3005
+  host: predictions

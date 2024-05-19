@@ -26,7 +26,7 @@ services:
     env_file:
       - ./apps/patients/.env
     ports:
-      - '3003:3003'
+      - '3002:3002'
 
   predictions:
     build:
@@ -39,4 +39,4 @@ services:
     env_file:
       - ./apps/predictions/.env
     ports:
-      - '3005:3005'
+      - '3004:3004'

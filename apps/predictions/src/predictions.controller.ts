@@ -12,7 +12,7 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { PredictionsService } from './predictions.service';
-import { JwtAuthGuard, ValidateObjectId } from '@app/common';
+import { JwtAuthGuard, TokenPayload, ValidateObjectId } from '@app/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { AuthToken } from './utils/decorators/auth-token.decorator';
 import { Request } from 'express';
@@ -27,50 +27,55 @@ export class PredictionsController {
   getHello(): string {
     return this.predictionsService.getHello();
   }
-
-  // try creating prediction
-  @Post('try-predict')
-  @UseGuards(JwtAuthGuard)
-  @UseInterceptors(FilesInterceptor('files'))
-  tryPredict(
-    @AuthToken() authToken: string,
-    @UploadedFiles() files: Express.Multer.File[],
-  ) {
-    return this.predictionsService.createMultiplePrediction(files, authToken);
-  }
-
   // Get all predictions
   @Get()
-  getPredictions() {}
+  async getPredictions() {
+    return this.predictionsService.fetchAll();
+  }
 
   // Get all predictions for specific patient
   @Get('patient/:id')
-  getPredictionsByPatientId(@Param('id', ValidateObjectId) id: string) {}
+  async getPredictionsByPatientId(@Param('id', ValidateObjectId) id: string) {}
 
   // Get specific prediction
   @Get('prediction/:id')
-  getPredictionById(@Param('id', ValidateObjectId) id: string) {}
+  async getPredictionById(@Param('id', ValidateObjectId) id: string) {
+    return this.predictionsService.fetchPredictionById(id);
+  }
 
   // Create prediction
   @Post('patient/create/:id')
   @UseGuards(JwtAuthGuard)
   @UseInterceptors(FilesInterceptor('files'))
-  createPrediction(
+  async createPrediction(
     @Param('id', ValidateObjectId) id: string,
     @AuthToken() authToken: string,
     @UploadedFiles() imageFiles: Express.Multer.File[],
     @Req() request: Request,
     @Body() createPredictionDto: CreatePredictionDto,
-  ) {}
+  ) {
+    const tokenPayload = request.user as TokenPayload;
+    return this.predictionsService.create(
+      id,
+      authToken,
+      tokenPayload,
+      createPredictionDto,
+      imageFiles,
+    );
+  }
 
   // Update prediction
   @Patch('update/:id')
   async updatePrediction(
     @Param('id', ValidateObjectId) id: string,
     @Body() updatePredictionDto: UpdatePredictionDto,
-  ) {}
+  ) {
+    return this.predictionsService.update(id, updatePredictionDto);
+  }
 
   // Delete prediction
   @Delete('delete/:id')
-  async deletePrediction(@Param('id', ValidateObjectId) id: string) {}
+  async deletePrediction(@Param('id', ValidateObjectId) id: string) {
+    return this.predictionsService.delete(id);
+  }
 }

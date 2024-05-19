@@ -1,22 +1,25 @@
+import { Module } from '@nestjs/common';
+import { EventsController } from './events.controller';
+import { EventsService } from './events.service';
 import {
   ConfigModule,
   databaseConfig,
   DatabaseModule,
-  DoctorDocument,
-  DoctorSchema,
+  PatientDocument,
+  PatientSchema,
+  PredictionDocument,
+  PredictionSchema,
   secretConfig,
   Services,
   ServicesConfig,
   servicesConfig,
 } from '@app/common';
-import { Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
-import { DoctorsRepository } from '../doctors/doctors.repository';
-import { EventsController } from './events.controller';
-import { EventsService } from './events.service';
+import { ConfigService } from '@nestjs/config';
+import { PredictionsRepository } from '../../../predictions/src/predictions.repository';
+import { PatientsRepository } from '../patients.repository';
 
-const envPath = 'apps/auth/.env';
+const envPath = 'apps/patients/.env';
 
 @Module({
   imports: [
@@ -26,6 +29,26 @@ const envPath = 'apps/auth/.env';
       loads: [servicesConfig],
     }),
     ClientsModule.registerAsync([
+      {
+        name: Services.Doctors,
+        inject: [ConfigService],
+        imports: [
+          ConfigModule.forRootAsync({
+            secretConfig: () => secretConfig(envPath),
+            loads: [servicesConfig],
+          }),
+        ],
+        useFactory: (configService: ConfigService) => {
+          const servicesConfig = configService.get<ServicesConfig>('services');
+          return {
+            transport: Transport.TCP,
+            options: {
+              host: servicesConfig.auth.host,
+              port: servicesConfig.auth.rmq_port,
+            },
+          };
+        },
+      },
       {
         name: Services.Predictions,
         inject: [ConfigService],
@@ -60,11 +83,11 @@ const envPath = 'apps/auth/.env';
       }),
     }),
     DatabaseModule.forFeature([
-      { name: DoctorDocument.name, schema: DoctorSchema },
+      { name: PatientDocument.name, schema: PatientSchema },
     ]),
   ],
   controllers: [EventsController],
-  providers: [EventsService, DoctorsRepository],
+  providers: [EventsService, PatientsRepository],
   exports: [EventsService],
 })
 export class EventsModule {}

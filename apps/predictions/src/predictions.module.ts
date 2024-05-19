@@ -21,6 +21,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PredictionsRepository } from './predictions.repository';
 import { HelpersModule } from './helpers/helpers.module';
+import { EventsModule } from './events/events.module';
 
 const envPath = 'apps/predictions/.env';
 
@@ -96,6 +97,7 @@ const envPath = 'apps/predictions/.env';
         };
       },
     }),
+    EventsModule,
   ],
   controllers: [PredictionsController],
   providers: [PredictionsService, PredictionsRepository],

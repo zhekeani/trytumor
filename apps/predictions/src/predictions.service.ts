@@ -5,7 +5,6 @@ import {
   TokenPayload,
 } from '@app/common';
 import {
-  BadRequestException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -13,9 +12,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as Bluebird from 'bluebird';
 import { Types } from 'mongoose';
+import { EventsService } from './events/events.service';
 import { HelpersService } from './helpers/helpers.service';
 import { PredictionsRepository } from './predictions.repository';
 import { CreatePredictionDto } from './utils/dto/create-prediction.dto';
+import { UpdatePredictionDto } from './utils/dto/update-prediction.dto';
 
 @Injectable()
 export class PredictionsService {
@@ -27,6 +28,7 @@ export class PredictionsService {
     private readonly pubsubService: PubsubService,
     private readonly configService: ConfigService,
     private readonly helpersService: HelpersService,
+    private readonly eventsService: EventsService,
   ) {}
 
   getHello(): string {
@@ -84,11 +86,12 @@ export class PredictionsService {
     );
 
     // Create PubSub topic and subscription
-    const topicToListen =
-      await this.pubsubService.createTopicIfNotExists('nestjs-predict');
+    const topicToListen = await this.pubsubService.createTopicIfNotExists(
+      `nestjs-predict-${tokenPayload.doctorId}-${patientId}`,
+    );
     const subscription = await this.pubsubService.createSubscriptionIfNotExists(
       topicToListen,
-      'nestjs-predict-multiple',
+      `nestjs-predict-multiple-${tokenPayload.doctorId}-${patientId}`,
     );
 
     const topicNameToListen = topicToListen.name.split('/').pop();
@@ -134,6 +137,18 @@ export class PredictionsService {
         predictionDataSchema,
       );
 
+      this.eventsService.emitPredictionNewEvent({
+        patientId: savedPrediction.patientData.id,
+        doctorId: savedPrediction.predictionsData[0].doctorId,
+        predictionThumbnail: {
+          id: savedPrediction.predictionsData[0].id,
+          fileName: savedPrediction.predictionsData[0].fileName,
+          dataAndTime: savedPrediction.predictionsData[0].dateAndTime,
+          number: savedPrediction.predictionsData[0].number,
+          imageUrl: savedPrediction.predictionsData[0].results[0].imageUrl,
+        },
+      });
+
       return savedPrediction;
     } catch (error) {
       console.error(`Received error while publishing: ${error.message}`);
@@ -141,81 +156,73 @@ export class PredictionsService {
     }
   }
 
-  async createMultiplePrediction(
-    files: Express.Multer.File[],
-    authToken: string,
-  ) {
-    if (files.length == 0) {
-      throw BadRequestException;
-    }
+  // Fetch all predictions
+  async fetchAll() {
+    return this.predictionsRepository.find({});
+  }
 
-    const topicToListen =
-      await this.pubsubService.createTopicIfNotExists('nestjs-predict');
-    const topicNameToListen = topicToListen.name.split('/').pop();
-    let filesPath: string[] = Array.from({ length: files.length }, () => '');
-    let predictionsResult: (any | undefined)[] = Array.from(
-      { length: files.length },
-      () => undefined,
-    );
-
-    await Bluebird.Promise.map(
-      files,
-      async (file, index) => {
-        const path = `media/predictions/${file.originalname}`;
-        const { publicUrl } = await this.storageService.save(
-          path,
-          file.mimetype,
-          file.buffer,
-          [{ filename: file.originalname }],
-        );
-        filesPath[index] = path;
-        predictionsResult[index] = {
-          imagePublicUrl: publicUrl,
-          filename: file.originalname,
-          index,
-        };
+  // Fetch specific prediction by ID
+  async fetchPredictionById(predictionId: string) {
+    return this.predictionsRepository.findOne(
+      { 'predictionsData.id': predictionId },
+      {
+        predictionsData: { $elemMatch: { id: predictionId } },
+        patientData: 1,
       },
-      { concurrency: files.length },
+    );
+  }
+
+  // Update prediction
+  async update(predictionId: string, updatePredictionDto: UpdatePredictionDto) {
+    await this.predictionsRepository.findOneAndUpdate(
+      { 'predictionsData.id': predictionId },
+      {
+        $set: {
+          'predictionsData.$.fileName': updatePredictionDto.fileName,
+          'predictionsData.$.additionalNotes':
+            updatePredictionDto.additionalNotes,
+        },
+      },
     );
 
-    try {
-      await Bluebird.Promise.map(
-        filesPath,
-        async (path, index) => {
-          const cloudFnResponse =
-            await this.helpersService.createRequestToCloudFn(
-              authToken,
-              topicNameToListen,
-              path,
-              index,
-            );
+    const updatedPrediction = await this.fetchPredictionById(predictionId);
 
-          console.log(JSON.stringify(cloudFnResponse));
+    this.eventsService.emitPredictionUpdateEvent({
+      patientId: updatedPrediction.patientData.id,
+      doctorId: updatedPrediction.predictionsData[0].doctorId,
+      predictionThumbnail: {
+        id: updatedPrediction.predictionsData[0].id,
+        fileName: updatedPrediction.predictionsData[0].fileName,
+      },
+    });
+
+    return updatedPrediction;
+  }
+
+  // Delete prediction
+  async delete(predictionId: string) {
+    const predictionToDelete = await this.fetchPredictionById(predictionId);
+
+    const storageBucketPath = `media/patients/${predictionToDelete.patientData.id}/predictions/${predictionToDelete.predictionsData[0].id}`;
+
+    const results = await Bluebird.Promise.all([
+      this.storageService.deleteFilesByDirName(storageBucketPath),
+      this.predictionsRepository.findOneAndUpdate(
+        { 'predictionsData.id': predictionId },
+        {
+          $pull: {
+            predictionsData: { id: new Types.ObjectId(predictionId) },
+          },
         },
-        { concurrency: files.length },
-      );
+      ),
+    ]);
 
-      const subscription =
-        await this.pubsubService.createSubscriptionIfNotExists(
-          topicToListen,
-          'nestjs-predict-multiple',
-        );
-      const predictionsResultDto = await this.pubsubService.listenForMessages(
-        subscription,
-        files.length,
-      );
+    this.eventsService.emitPredictionDeleteEvent({
+      patientId: predictionToDelete.patientData.id,
+      doctorId: predictionToDelete.predictionsData[0].doctorId,
+      predictionId: predictionToDelete.predictionsData[0].id,
+    });
 
-      predictionsResultDto.forEach((predictionResultDto) => {
-        predictionsResult[predictionResultDto.index].percentage =
-          predictionResultDto.percentage;
-      });
-
-      return {
-        predictionsResult,
-      };
-    } catch (error) {
-      console.error(`Received error while publishing: ${error.message}`);
-      throw InternalServerErrorException;
-    }
+    return results[1];
   }
 }

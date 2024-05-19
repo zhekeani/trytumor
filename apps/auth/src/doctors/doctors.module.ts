@@ -18,6 +18,7 @@ import { ConfigService } from '@nestjs/config';
 
 import { DoctorsRepository } from './doctors.repository';
 import { databaseConfig } from '../config/config_files/database.config';
+import { EventsModule } from '../events/events.module';
 
 @Module({
   controllers: [DoctorsController],
@@ -64,6 +65,7 @@ import { databaseConfig } from '../config/config_files/database.config';
         };
       },
     }),
+    EventsModule,
   ],
 })
 export class DoctorsModule {}

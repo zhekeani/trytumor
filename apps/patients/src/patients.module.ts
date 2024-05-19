@@ -19,6 +19,7 @@ import { ConfigService } from '@nestjs/config';
 import { PatientsController } from './patients.controller';
 import { PatientsService } from './patients.service';
 import { PatientsRepository } from './patients.repository';
+import { EventsModule } from './events/events.module';
 
 const envPath = 'apps/patients/.env';
 
@@ -75,6 +76,7 @@ const envPath = 'apps/patients/.env';
         };
       },
     }),
+    EventsModule,
   ],
   controllers: [PatientsController],
   providers: [PatientsService, PatientsRepository],

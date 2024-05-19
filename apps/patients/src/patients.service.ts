@@ -1,15 +1,17 @@
 import { Injectable } from '@nestjs/common';
 import * as Bluebird from 'bluebird';
 import { PatientsRepository } from './patients.repository';
-import { StorageService } from '@app/common';
+import { Gender, StorageService } from '@app/common';
 import { CreatePatientDto } from './utils/dto/create-patient.dto';
 import { Types } from 'mongoose';
+import { EventsService } from './events/events.service';
 
 @Injectable()
 export class PatientsService {
   constructor(
     private readonly patientsRepository: PatientsRepository,
     private readonly storageService: StorageService,
+    private readonly eventService: EventsService,
   ) {}
 
   private constructStorageBucketPath(patientId: string) {
@@ -61,6 +63,13 @@ export class PatientsService {
         patientId,
       );
 
+      this.eventService.emitPatientNewEvent({
+        id: newPatient._id.toHexString(),
+        fullName: newPatient.fullName,
+        gender: newPatient.gender as Gender,
+        birthDate: newPatient.birthDate,
+      });
+
       return newPatient;
     } catch (error) {
       await this.deleteProfilePic(patientId.toHexString());
@@ -93,6 +102,13 @@ export class PatientsService {
       await this.saveProfilePic(patientId, profilePicFile);
     }
 
+    this.eventService.emitPatientUpdateEvent({
+      id: patientId,
+      fullName: updatedPatient.fullName,
+      gender: updatedPatient.gender as Gender,
+      birthDate: updatedPatient.birthDate,
+    });
+
     return updatedPatient;
   }
 
@@ -100,11 +116,15 @@ export class PatientsService {
   async delete(patientId: string) {
     try {
       const results = await Bluebird.Promise.all([
-        await this.storageService.deleteFilesByDirName(
+        this.storageService.deleteFilesByDirName(
           this.constructStorageBucketPatientDirPath(patientId),
         ),
         this.patientsRepository.findOneAndDelete({ _id: patientId }),
       ]);
+
+      this.eventService.emitPatientDeleteEvent({
+        id: patientId,
+      });
 
       return results[1];
     } catch (error) {
